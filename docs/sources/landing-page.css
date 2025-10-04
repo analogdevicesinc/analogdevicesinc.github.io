@@ -1,0 +1,33 @@
+/* We could populate the sidebar with other stuff,
+ * for now, let's just hide and adjust the margins. */
+
+#left,
+#right #show-repotoc,
+#right #show-localtoc,
+.sphinxsidebarwrapper,
+.localtoc {
+    display: none !important;
+}
+
+header #logo {
+    padding-left: 1rem;
+    margin-left: 0;
+}
+
+@media (min-width: 65em) and (max-width: 105em) {
+    .bodywrapper {
+        width: calc(90vw);
+        margin-left: calc(50vw - 45vw);
+    }
+
+    header #right {
+        width: calc(90vw);
+        margin-left: calc(50vw - 45vw);
+    }
+}
+
+@media (max-width: 65em) {
+    header #right {
+        margin-left: 1rem;
+    }
+}
