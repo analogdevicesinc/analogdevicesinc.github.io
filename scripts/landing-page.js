@@ -114,6 +114,13 @@ class Landing {
 (async () => {
   const app = await WaitApp.wait();
 
-  new Landing(app)
+  let on_visible = () => {
+    new Landing(app)
+  }
+
+  if (document.visibilityState === 'visible')
+    on_visible()
+  else
+    window.addEventListener('focus', on_visible, { once: true })
 
 })();
