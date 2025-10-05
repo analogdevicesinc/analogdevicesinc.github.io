@@ -15,7 +15,7 @@ rollup_conf = path.join(root_dir, 'ci', 'rollup.config.landing-page.mjs')
 sass_bin = path.join(root_dir, 'node_modules', '.bin', 'sass')
 sass_conf = path.join(root_dir, 'style', 'landing-page.bundle.scss') + ':' + path.join(static_path, 'landing-page.min.css')
 
-doctools_assert_exp = path.abspath(path.join(root_dir, pardir, 'doctools'))
+doctools_assert_exp = path.abspath(path.join(root_dir, 'doctools'))
 doctools_assert_at = path.abspath(path.join(path.dirname(inspect.getfile(aux_killpg)), pardir, pardir))
 
 sass_shared = path.join(doctools_assert_exp, 'adi_doctools', 'theme', 'cosmic', 'style')

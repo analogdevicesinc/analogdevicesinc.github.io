@@ -19,7 +19,7 @@ jobs:
     - uses: actions/checkout@v4
       with:
         repository: analogdevicesinc/doctools
-        path: ../doctools
+        path: doctools
     - name: Install pip packages
       working-directory: docs
       run: |
@@ -42,8 +42,8 @@ jobs:
     - name: Bundle web styles
       run: >-
         node_modules/.bin/sass
-        --load-path ../doctools/adi_doctools/theme/cosmic/style
-        style/landing-page.bundle.scss:docs/sources/app.min.css
+        --load-path ./doctools/adi_doctools/theme/cosmic/style
+        style/landing-page.bundle.scss:docs/sources/landing-page.min.css
         --style compressed
 
     - name: Build doc
