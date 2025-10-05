@@ -5,6 +5,11 @@ Analog Devices Inc. Open Source
 
 :adi:`Analog Devices </>` open source software and documentation.
 
-.. raw:: html
+.. cards:: Repositories
+   :class: grid repositories
 
-   <div class="repositories"></div>
+.. cards-collection: Evaluation boards
+   :class: eval
+   :filter: eval user-guide
+
+   Loren inpsum:

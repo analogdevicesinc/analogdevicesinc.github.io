@@ -34,3 +34,51 @@ header #logo {
     }
 }
 
+.cards {
+    .entry {
+      & > span {
+        height: 100%;
+        display: block;
+        transition: margin ease .125s, box-shadow ease .125s;
+        border-radius: variable.$border-radius;
+        border: 1px solid rgba(125,125,125,.8);
+        padding: 1em;
+      }
+
+      &:hover > span {
+        box-shadow: 0 .2rem .5rem rgba(0,0,0,.1), 0 0 .0625rem rgba(0,0,0,.5);
+        margin: -.25em 0 .25em 0;
+      }
+      &:active > span {
+        margin: 0;
+        box-shadow: none;
+      }
+      .title {
+          color: var(--accent-color);
+          font-size: 1.25em;
+          padding-bottom: .5em;
+      }
+      .description {
+          color: var(--text-color3);
+      }
+    }
+}
+
+.cards.grid {
+    display: grid;
+    column-gap: 1em;
+    row-gap: 1em;
+}
+
+@media (min-width: variable.$screen-2) {
+    .cards.grid {
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+}
+
+@media (min-width: variable.$screen-1) and (max-width: variable.$screen-2) {
+    .cards.grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
