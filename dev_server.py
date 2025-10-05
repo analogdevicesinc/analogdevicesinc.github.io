@@ -45,7 +45,7 @@ def main():
     if symbolic_assert(rollup_bin, log['node_'].format(rollup_bin)):
         sys.exit(1)
     if doctools_assert_at != doctools_assert_exp:
-        log['repos'].format(doctools_assert_exp, doctools_assert_at)
+        print(log['repos'].format(doctools_assert_exp, doctools_assert_at))
         sys.exit(1)
 
     cmd_rollup = f"{rollup_bin} -c {rollup_conf} --watch"

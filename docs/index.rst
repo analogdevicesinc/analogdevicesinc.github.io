@@ -8,8 +8,7 @@ Analog Devices Inc. Open Source
 .. cards:: Repositories
    :class: grid repositories
 
-.. cards-collection: Evaluation boards
-   :class: eval
-   :filter: eval user-guide
-
-   Loren inpsum:
+.. cards-collection:: Evaluation boards
+   :class: grid eval
+   :category: User guides
+   :filter-label: eval user-guide
