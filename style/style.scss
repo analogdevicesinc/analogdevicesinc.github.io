@@ -1,3 +1,5 @@
+@use "variable";
+
 /* We could populate the sidebar with other stuff,
  * for now, let's just hide and adjust the margins. */
 
@@ -14,7 +16,7 @@ header #logo {
     margin-left: 0;
 }
 
-@media (min-width: 65em) and (max-width: 105em) {
+@media (min-width: variable.$screen-1) and (max-width: variable.$screen-3) {
     .bodywrapper {
         width: calc(90vw);
         margin-left: calc(50vw - 45vw);
@@ -26,8 +28,9 @@ header #logo {
     }
 }
 
-@media (max-width: 65em) {
+@media (max-width: variable.$screen-1) {
     header #right {
         margin-left: 1rem;
     }
 }
+
