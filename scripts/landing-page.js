@@ -1,4 +1,4 @@
-import { WaitApp } from '@shared/scripts/wait_app.js'
+import { WaitEvent } from '@shared/scripts/event.js'
 import { DOM } from '@shared/scripts/dom.js'
 
 class Landing {
@@ -6,7 +6,9 @@ class Landing {
     this.$ = {}
     this.parent = app
 
-    this.parent.fetch.then(this.construct.bind(this))
+    this.construct()
+
+    this.parent = app
   }
   construct_repositories () {
     let repositories = DOM.get('.cards.repositories', this.$.body)
@@ -103,17 +105,25 @@ class Landing {
     })
   }
   construct () {
-    this.$.body = DOM.get('.body')
-    this.construct_repositories()
-    this.parent.content_actions.then(
-      this.construct_collections.bind(this)
-    )
+    this.$.body = DOM.get('.body');
+
+    (async () => {
+      await WaitEvent(this.parent, 'fetch', "app:fetch:constructed")
+      this.parent.fetch.then(
+        this.construct_repositories.bind(this)
+      )
+    })();
+
+    (async () => {
+      await WaitEvent(this.parent, 'content_actions', "app:content_actions:constructed")
+      this.parent.content_actions.then(
+        this.construct_collections.bind(this)
+      )
+    })();
   }
 }
 
-(async () => {
-  const app = await WaitApp.wait();
-
+const LandingPage = () => {
   let on_visible = () => {
     new Landing(app)
   }
@@ -122,5 +132,9 @@ class Landing {
     on_visible()
   else
     window.addEventListener('focus', on_visible, { once: true })
+}
 
-})();
+(async () => {
+  await WaitEvent(window, 'app', "app:created")
+  LandingPage()
+})()
