@@ -84,13 +84,14 @@ header #logo {
         background: #fff;
         margin: -1em -1em .5em -1em;
         border-radius: variable.$border-radius;
+        overflow: hidden;
 
         img {
           object-fit: cover;
           margin: 0 auto;
           max-width: 20em;
           max-height: 25em;
-          width: 80%;
+          width: 100%;
         }
       }
     .entry > span {
