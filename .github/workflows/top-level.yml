@@ -32,7 +32,9 @@ jobs:
         rollup
         @rollup/plugin-terser
         @rollup/plugin-alias
+        @rollup/plugin-node-resolve
         sass
+        gsap
 
     - name: Bundle web scripts
       run: >-

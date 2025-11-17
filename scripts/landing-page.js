@@ -1,5 +1,9 @@
+"use strict";
+
 import { WaitEvent } from '@shared/scripts/event.js'
 import { DOM } from '@shared/scripts/dom.js'
+
+import { Cover } from './cover.js'
 
 class Landing {
   constructor (app) {
@@ -26,7 +30,6 @@ class Landing {
       description.innerText = value.description
       let entry = DOM.new('a', {
         'className': 'entry',
-        'target': 'blank',
         'href': key
       })
       let entry_inner = DOM.new('span')
@@ -53,7 +56,6 @@ class Landing {
     for (const [key, value] of Object.entries(items)) {
       let entry = DOM.new('a', {
         'className': 'entry',
-        'target': 'blank',
         'href': `${value.docname}.html`
       })
       let entry_inner = DOM.new('span')
@@ -126,6 +128,7 @@ class Landing {
 const LandingPage = () => {
   let on_visible = () => {
     new Landing(app)
+    new Cover(app)
   }
 
   if (document.visibilityState === 'visible')
