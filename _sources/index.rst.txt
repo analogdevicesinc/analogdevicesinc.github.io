@@ -3,7 +3,8 @@
 Analog Devices Inc. Open Source
 ===============================
 
-:adi:`Analog Devices </>` open source software and documentation.
+.. flex::
+   :class: hero
 
 .. cards:: Repositories
    :class: grid repositories
