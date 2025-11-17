@@ -85,13 +85,16 @@ class directive_cards_collection(Directive):
 
         return [section]
 
+def builder_inited(app):
+    if app.builder.format == 'html':
+        app.add_js_file("landing-page.umd.js", priority=500, loading_method="async")
+        app.add_css_file("landing-page.min.css")
 
 def setup(app):
     app.add_directive('cards', directive_cards)
     app.add_directive('cards-collection', directive_cards_collection)
 
-    app.add_js_file("landing-page.umd.js", priority=500, loading_method="async")
-    app.add_css_file("landing-page.min.css")
+    app.connect("builder-inited", builder_inited)
 
     return {
         "parallel_read_safe": True,
