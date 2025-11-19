@@ -117,6 +117,13 @@ export class Cover {
       }
     }
 
+    let lerp = (t, x) => {
+      let c = Math.sin(t) + Math.cos(x*0.01) + Math.cos(x)
+      return c < 0.5 ? 2*c*c : 1 - Math.pow(-2*c+2, 2)/2
+    }
+
+    let t = 0
+    let frequency
     let tick = () => {
         ctx.clearRect(0, 0, w, h);
 
@@ -130,11 +137,13 @@ export class Cover {
           ctx.moveTo(-5, h)
 
           for (let x = -5; x < w + 5; x++) {
+            frequency = 0.0001*lerp(t, x + wave.phase * 2) * 10
             const taper = Math.sin(((x + 100) / w) * Math.PI) + x / w
 
             const dyn_amp = wave.amplitude * taper
 
-            const y = (h * 0.9) + Math.sin(x * wave.frequency + wave.phase) * dyn_amp - (h * (x / w))*.1
+            const y = (h * 0.9) + Math.sin(x * wave.frequency + wave.phase) * dyn_amp - (h * (x / w))*.1 +
+                                  Math.sin(x * frequency + wave.phase) * dyn_amp * 0.2
             ctx.lineTo(x, y)
           }
 
@@ -143,6 +152,7 @@ export class Cover {
           ctx.stroke()
           ctx.fillStyle = "rgba(110, 190, 220, 0.02)";
           ctx.fill()
+          t += 0.01
         })
 
         requestAnimationFrame(tick);
