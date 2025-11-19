@@ -4,29 +4,27 @@
   margin-top: 0.5em;
   flex-wrap: nowrap !important;
   background: var(--bg-color3);
+  border-radius: variable.$border-radius;
+  border: 1px solid rgba(125,125,125,.5);
+  overflow:hidden;
 }
 
 .panel {
   overflow: hidden;
-  border-radius: variable.$border-radius;
-  border: 1px solid rgba(125,125,125,.8);
   position: relative;
   width: 100%;
+  backdrop-filter: blur(10px);
+  border-radius: .4rem;
 
   &.content {
     display: flex;
     flex-direction: column;
   }
 
-  &.visual {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
   .inner {
     padding: calc(3vw + 4vh) calc(2vw + 2vh);
     position: relative;
+    backdrop-filter: blur(10px);
   }
 }
 

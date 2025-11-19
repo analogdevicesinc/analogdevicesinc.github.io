@@ -32,7 +32,7 @@ export class Cover {
       this.add_headline(),
       DOM.new("p", {
         className: "lead",
-        innerText: "Explore our open source drivers and solutions to build with confidence on ADI platforms."
+        innerText: "Explore our open source drivers and solutions to build with confidence."
       }),
     )
     panel.append(
@@ -72,37 +72,42 @@ export class Cover {
 
     let w, h
 
+    let t = Date.now() / 1000
     const waves = [
       {
         amplitude: 15,
         frequency: 0.02,
-        phase: 2,
+        phase: -t - 50,
         speed: -0.01,
-        color: "rgba(110, 190, 220, 0.1)",
+        color: "rgba(212, 173, 240, 0.2)",
+        fill_color: "rgba(212, 173, 240, 0.03)",
         lineWidth: 1
       },
       {
         amplitude: 20,
         frequency: 0.015,
-        phase: 2,
-        speed: -0.01,
-        color: "rgba(110, 190, 220, 0.2)",
+        phase: -t - 30,
+        speed: -0.014,
+        color: "rgba(180, 180, 230, 0.3)",
+        fill_color: "rgba(180, 180, 230, 0.05)",
         lineWidth: 1
       },
       {
-        amplitude: 30,
+        amplitude: 25,
         frequency: 0.012,
-        phase: 0,
-        speed: -0.015,
-        color: "rgba(110, 190, 220, 0.3)",
+        phase: -t - 10,
+        speed: -0.017,
+        color: "rgba(130, 185, 225, 0.4)",
+        fill_color: "rgba(130, 185, 225, 0.075)",
         lineWidth: 2
       },
       {
-        amplitude: 40,
+        amplitude: 35,
         frequency: 0.008,
-        phase: 1,
-        speed: -0.013,
+        phase: -t - 20,
+        speed: -0.02,
         color: "rgba(110, 190, 220, 0.4)",
+        fill_color: "rgba(110, 190, 220, 0.1)",
         lineWidth: 3
       },
     ];
@@ -118,11 +123,10 @@ export class Cover {
     }
 
     let lerp = (t, x) => {
-      let c = Math.sin(t) + Math.cos(x*0.01) + Math.cos(x)
+      let c =  Math.sin(t) +  Math.cos(x*0.02)  + Math.cos(x)
       return c < 0.5 ? 2*c*c : 1 - Math.pow(-2*c+2, 2)/2
     }
 
-    let t = 0
     let frequency
     let tick = () => {
         ctx.clearRect(0, 0, w, h);
@@ -141,16 +145,17 @@ export class Cover {
             const taper = Math.sin(((x + 100) / w) * Math.PI) + x / w
 
             const dyn_amp = wave.amplitude * taper
+            const clamper = h / 300
 
-            const y = (h * 0.9) + Math.sin(x * wave.frequency + wave.phase) * dyn_amp - (h * (x / w))*.1 +
-                                  Math.sin(x * frequency + wave.phase) * dyn_amp * 0.2
+            const y = (h * 0.95) + (Math.sin(x * wave.frequency + wave.phase) * dyn_amp - (h * (x / w))*.1  +
+                                    Math.sin(x * frequency + wave.phase) * 5) * clamper
             ctx.lineTo(x, y)
           }
 
           ctx.lineTo(w + 5, h)
 
           ctx.stroke()
-          ctx.fillStyle = "rgba(110, 190, 220, 0.02)";
+          ctx.fillStyle = wave.fill_color;
           ctx.fill()
           t += 0.01
         })
@@ -159,7 +164,8 @@ export class Cover {
       }
 
     addEventListener('resize', resize_canvas)
-    addEventListener("DOMContentLoaded", resize_canvas())
+    addEventListener('DOMContentLoaded', resize_canvas)
+    setTimeout(resize_canvas, 100)
     resize_canvas()
     tick()
   }
