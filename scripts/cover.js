@@ -149,6 +149,7 @@ export class Cover {
       }
 
     addEventListener('resize', resize_canvas)
+    addEventListener("DOMContentLoaded", resize_canvas())
     resize_canvas()
     tick()
   }
