@@ -45,7 +45,7 @@ jobs:
     - name: Bundle web styles
       run: >-
         node_modules/.bin/sass
-        --load-path ./doctools/adi_doctools/theme/cosmic/style
+        --load-path ./doctools/adi_doctools/theme/harmonic/style
         style/landing-page.bundle.scss:docs/sources/landing-page.min.css
         --style compressed
 
