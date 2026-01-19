@@ -146,7 +146,7 @@ export class Cover {
           ctx.moveTo(-5, h)
 
           for (let x = -5; x < w + 5; x++) {
-            frequency = 0.0001*lerp(t, x + wave.phase * 2) * 10
+            frequency = 0.0003*lerp(t, x + wave.phase * 2)
             const taper = Math.sin(((x + 100) / w) * Math.PI) + x / w
 
             const dyn_amp = wave.amplitude * taper
