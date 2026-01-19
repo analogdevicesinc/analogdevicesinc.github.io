@@ -1,6 +1,5 @@
 from docutils.parsers.rst import Directive, directives
 from docutils.parsers.rst.roles import set_classes
-from adi_doctools.directive.node import node_div
 from docutils import nodes
 
 import re
