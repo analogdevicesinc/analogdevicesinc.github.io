@@ -113,12 +113,17 @@ export class Cover {
     ];
 
     let resize_canvas = () => {
-      const new_width = this.$.container.clientWidth;
-      const new_height = this.$.container.clientHeight;
+      const new_width = this.$.container.clientWidth
+      const new_height = this.$.container.clientHeight
+      const dpr = window.devicePixelRatio
 
       if (canvas.width !== new_width || canvas.height !== new_height) {
-        w = canvas.width = new_width;
-        h = canvas.height = new_height;
+        ctx.scale(dpr, dpr)
+        w = canvas.width = new_width * dpr
+        h = canvas.height = new_height * dpr
+
+        canvas.style.width = `${new_width}px`
+        canvas.style.height = `${new_height}px`
       }
     }
 
