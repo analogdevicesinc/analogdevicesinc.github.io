@@ -40,6 +40,7 @@ jobs:
       run: >-
         node_modules/.bin/rollup -c
         ci/rollup.config.landing-page.mjs
+        --environment DOCTOOLS_PATH:./doctools
 
     - name: Bundle web styles
       run: >-
