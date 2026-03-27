@@ -36,8 +36,10 @@ header #logo {
 
 .cards {
     .entry {
+      border-radius: variable.$border-radius;
+
       & > span {
-        background: var(--bg-color3);
+        background: var(--bg-color1);
         height: 100%;
         display: block;
         transition: box-shadow ease .125s;
@@ -48,7 +50,7 @@ header #logo {
 
       &:hover > span {
         box-shadow: 0 .2rem .5rem rgba(0,0,0,.1), 0 0 .0625rem rgba(0,0,0,.2);
-        border-color: rgba(125,125,125,1);
+        border-color: var(--accent-color);
       }
       &:active > span {
         margin: 0;
@@ -82,7 +84,7 @@ header #logo {
     .img-container {
         background: #fff;
         margin: -1em -1em .5em -1em;
-        border-radius: variable.$border-radius;
+        border-radius: variable.$border-radius variable.$border-radius 0 0;
         overflow: hidden;
 
         img {
