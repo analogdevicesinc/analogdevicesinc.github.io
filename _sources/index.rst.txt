@@ -18,3 +18,15 @@ Analog Devices Inc. Open Source
    :class: grid workshop
    :category: Learning
    :filter-label: workshop
+
+Sponsors of
+-----------
+
+.. grid::
+   :columns: 3
+
+   .. card::
+
+      .. image:: badges/labgrid.svg
+
+      `labgrid's docs <https://labgrid.readthedocs.io/en/latest/>`__
