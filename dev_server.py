@@ -10,13 +10,13 @@ from adi_doctools.cli.aux_os import aux_killpg
 
 root_dir = path.abspath(path.dirname(__file__))
 static_path = path.join(root_dir, 'docs', 'sources')
-rollup_bin = path.join(root_dir, 'node_modules', '.bin', 'rollup')
-rollup_conf = path.join(root_dir, 'ci', 'rollup.config.landing-page.mjs')
-sass_bin = path.join(root_dir, 'node_modules', '.bin', 'sass')
-sass_conf = path.join(root_dir, 'style', 'landing-page.bundle.scss') + ':' + path.join(static_path, 'landing-page.min.css')
-doctools_path = path.abspath(path.join(path.dirname(inspect.getfile(aux_killpg)), pardir, pardir))
+rollup_conf = path.join(root_dir, 'scripts', 'rollup.config.mjs')
+sass_conf = path.join(root_dir, 'style', 'bundle.scss') + ':' + path.join(static_path, 'custom.min.css')
 
+doctools_path = path.abspath(path.join(path.dirname(inspect.getfile(aux_killpg)), pardir, pardir))
 sass_shared = path.join(doctools_path, 'adi_doctools', 'theme', 'harmonic', 'style')
+rollup_bin = path.join(doctools_path, 'node_modules', '.bin', 'rollup')
+sass_bin = path.join(doctools_path, 'node_modules', '.bin', 'sass')
 
 log = {
     'node': "Couldn't find the node executable, please install nodejs.",

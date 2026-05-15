@@ -86,8 +86,8 @@ class directive_cards_collection(Directive):
 
 def builder_inited(app):
     if app.builder.format == 'html':
-        app.add_js_file("landing-page.umd.js", priority=500, loading_method="async")
-        app.add_css_file("landing-page.min.css")
+        app.add_js_file("custom.umd.js", priority=500, loading_method="async")
+        app.add_css_file("custom.min.css")
 
 def setup(app):
     app.add_directive('cards', directive_cards)
