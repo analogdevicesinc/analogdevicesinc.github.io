@@ -5,6 +5,7 @@ import threading
 import inspect
 import signal
 import sys
+import os
 
 from adi_doctools.cli.aux_os import aux_killpg
 
@@ -15,6 +16,7 @@ sass_conf = path.join(root_dir, 'style', 'bundle.scss') + ':' + path.join(static
 
 doctools_path = path.abspath(path.join(path.dirname(inspect.getfile(aux_killpg)), pardir, pardir))
 sass_shared = path.join(doctools_path, 'adi_doctools', 'theme', 'harmonic', 'style')
+node_modules = path.join(doctools_path, 'node_modules')
 rollup_bin = path.join(doctools_path, 'node_modules', '.bin', 'rollup')
 sass_bin = path.join(doctools_path, 'node_modules', '.bin', 'sass')
 
@@ -42,6 +44,12 @@ def main():
     if symbolic_assert(rollup_bin, log['node_'].format(rollup_bin)):
         sys.exit(1)
 
+    node_modules_link = path.join(root_dir, 'node_modules')
+    link_created = False
+    if not path.exists(node_modules_link):
+        os.symlink(node_modules, node_modules_link)
+        link_created = True
+
     cmd_rollup = f"{rollup_bin} -c {rollup_conf} --watch  --environment DOCTOOLS_PATH:{doctools_path}"
     cmd_sass = f"{sass_bin} --load-path {sass_shared} --style compressed --watch {sass_conf}"
     rollup_p = subprocess.Popen(cmd_rollup, shell=True, cwd=root_dir,
@@ -53,6 +61,8 @@ def main():
     def signal_handler(sig, frame):
         aux_killpg(rollup_p)
         aux_killpg(sass_p)
+        if link_created and path.islink(node_modules_link):
+            os.unlink(node_modules_link)
         shutdown_event.set()
         print("Terminated")
         sys.exit()
