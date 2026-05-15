@@ -9,7 +9,7 @@ export default [
   {
     input: `./scripts/landing-page.js`,
     output: {
-      file: `./docs/sources/landing-page.umd.js`,
+      file: `./docs/sources/custom.umd.js`,
       format: "umd",
       name: "LandingPage",
       sourcemap: true,
