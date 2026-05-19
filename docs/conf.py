@@ -27,13 +27,13 @@ source_suffix = '.rst'
 
 # -- Custom extensions configuration ------------------------------------------
 
-landing_repo = True
-
 # -- Options for HTML output --------------------------------------------------
 
 html_theme = 'harmonic'
 
-html_theme_options = {}
+html_theme_options = {
+    'landing_page': True,
+}
 
 html_static_path = ["sources"]
 html_favicon = path.join("sources", "icon.svg")
