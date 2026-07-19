@@ -27,8 +27,13 @@ export class Cover {
 
     const panel = DOM.new("section", { className: "panel content" })
     const inner = DOM.new("div", { className: "inner" })
+    const eyebrow = DOM.new("div", { className: "eyebrow" })
+    eyebrow.append(
+      DOM.new("span", { innerText: "ADI" }),
+      DOM.new("span", { innerText: "Open Source" })
+    )
     inner.append(
-      DOM.new("div", { className: "eyebrow", innerText: "Open Source" }),
+      eyebrow,
       this.add_headline(),
       DOM.new("p", {
         className: "lead",

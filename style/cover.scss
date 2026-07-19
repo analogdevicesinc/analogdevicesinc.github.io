@@ -1,7 +1,8 @@
 @use "variable";
+@use "mixin_icons";
 
 .hero {
-  margin-top: 0.5em;
+  margin-top: 1em;
   flex-wrap: nowrap !important;
   background: var(--bg-color1);
   border-radius: variable.$border-radius;
@@ -29,11 +30,23 @@
 }
 
 .eyebrow {
+  @include mixin_icons.icons(("heart"));
+
   text-transform: uppercase;
   font-size: 0.8em;
   font-weight: bold;
   letter-spacing: 1.8px;
   color: var(--accent-color);
+
+  span:last-child:before {
+    content: '';
+    display: inline-block;
+    width: 1.5em;
+    height: 1.5em;
+    margin: 0 .15em -0.3em .15em;
+    background-color: var(--accent-color);
+    mask-image: var(--icon-heart);
+  }
 }
 
 .headline {

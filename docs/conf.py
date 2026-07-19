@@ -5,8 +5,8 @@ sys.path.insert(0, path.abspath('ext'))
 # -- Project information -----------------------------------------------------
 
 repository = 'analogdevicesinc.github.io'
-project = 'Landing page'
-copyright = '2025, Analog Devices, Inc.'
+project = 'Open source landing page'
+copyright = '2026, Analog Devices, Inc.'
 author = 'Analog Devices, Inc.'
 
 language = 'en'

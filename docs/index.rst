@@ -1,8 +1,5 @@
 :body-class: landing-page
 
-Analog Devices Inc. Open Source
-===============================
-
 .. flex::
    :class: hero
 

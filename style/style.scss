@@ -4,8 +4,10 @@
  * for now, let's just hide and adjust the margins. */
 
 #left,
+header #logo,
 #right #show-repotoc,
 #right #show-localtoc,
+.vertical-divider,
 .sphinxsidebarwrapper,
 .localtoc {
     display: none !important;
@@ -119,3 +121,6 @@ header #logo {
     }
 }
 
+footer {
+    margin-left: 0 !important;
+}
