@@ -54,6 +54,15 @@ jobs:
       run: |
         make html SPHINXOPTS="-W --keep-going"
 
+    - name: Generate sitemap
+      working-directory: docs
+      run: |
+        curl -fsSL https://analogdevicesinc.github.io/doctools/metadata.json |
+          jq -r '.repotoc[] | select(.visibility == "public") | .url_doc' |
+          jq -R -s 'split("\n") | map(select(length > 0))' |
+          jq -r '"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n" + (map("  <url><loc>\(.)/</loc></url>") | join("\n")) + "\n</urlset>"' \
+          > _build/html/sitemap.xml
+
     - name: Store the generated doc
       uses: actions/upload-artifact@v4
       with:
