@@ -54,13 +54,13 @@ jobs:
       run: |
         make html SPHINXOPTS="-W --keep-going"
 
-    - name: Generate sitemap
+    - name: Generate sitemap index
       working-directory: docs
       run: |
         curl -fsSL https://analogdevicesinc.github.io/doctools/metadata.json |
-          jq -r '.repotoc[] | select(.visibility == "public") | .url_doc' |
+          jq -r '.repotoc[] | select(.visibility == "public") | .url_doc + "/sitemap.xml"' |
           jq -R -s 'split("\n") | map(select(length > 0))' |
-          jq -r '"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n" + (map("  <url><loc>\(.)/</loc></url>") | join("\n")) + "\n</urlset>"' \
+          jq -r '"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<sitemapindex xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n" + (map("  <sitemap><loc>\(.)</loc></sitemap>") | join("\n")) + "\n</sitemapindex>"' \
           > _build/html/sitemap.xml
 
     - name: Upload Pages artifact
