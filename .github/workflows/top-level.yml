@@ -20,6 +20,10 @@ jobs:
       with:
         repository: analogdevicesinc/doctools
         path: doctools
+    - uses: actions/checkout@v4
+      with:
+        ref: gh-pages
+        path: redirects
     - name: Install pip packages
       working-directory: docs
       run: |
@@ -53,6 +57,11 @@ jobs:
       working-directory: docs
       run: |
         make html SPHINXOPTS="-W --keep-going"
+
+    - name: Preserve redirects
+      run: |
+        mkdir -p docs/_build/html/documentation
+        cp -a redirects/documentation/. docs/_build/html/documentation/
 
     - name: Generate sitemap index
       working-directory: docs
