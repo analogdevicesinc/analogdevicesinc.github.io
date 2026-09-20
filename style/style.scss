@@ -71,6 +71,9 @@ header #logo {
         border-top: 1px solid var(--text-color3);
       }
     }
+    a.entry img {
+      cursor: pointer !important;
+    }
 }
 
 .collection-category {
