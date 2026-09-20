@@ -3,7 +3,7 @@
 import { WaitEvent } from '@shared/scripts/event.js'
 import { DOM } from '@shared/scripts/dom.js'
 
-import { Cover } from './cover.js'
+import { Hero } from './hero.js'
 
 class Landing {
   constructor (app) {
@@ -128,7 +128,7 @@ class Landing {
 const LandingPage = () => {
   let on_visible = () => {
     new Landing(app)
-    new Cover(app)
+    new Hero(app)
   }
 
   if (document.visibilityState === 'visible')

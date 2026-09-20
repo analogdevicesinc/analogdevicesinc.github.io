@@ -2,14 +2,14 @@
 
 import { DOM } from '@shared/scripts/dom.js'
 
-export class Cover {
+export class Hero {
   constructor (app) {
     this.app = app
     this.$ = {}
 
     this.construct()
 
-    app.cover = this
+    app.hero = this
   }
 
   construct() {
@@ -21,7 +21,7 @@ export class Cover {
     const container = document.querySelector("div.hero")
 
     if (!container) {
-      console.warn("Cover: div.hero not on page.")
+      console.warn("Hero: div.hero not on page.")
       return
     }
 
