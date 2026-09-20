@@ -12,12 +12,12 @@ export class Hero {
     app.hero = this
   }
 
-  construct() {
+  construct () {
     this.mount()
     this.init_background()
   }
 
-  mount() {
+  mount () {
     const container = document.querySelector("div.hero")
 
     if (!container) {
@@ -25,9 +25,9 @@ export class Hero {
       return
     }
 
-    const panel = DOM.new("section", { className: "panel content" })
-    const inner = DOM.new("div", { className: "inner" })
-    const eyebrow = DOM.new("div", { className: "eyebrow" })
+    const panel = DOM.new("section", { className: "hero-panel" })
+    const inner = DOM.new("div", { className: "hero-inner" })
+    const eyebrow = DOM.new("div", { className: "hero-eyebrow" })
     eyebrow.append(
       DOM.new("span", { innerText: "ADI" }),
       DOM.new("span", { innerText: "Open Source" })
@@ -36,8 +36,8 @@ export class Hero {
       eyebrow,
       this.add_headline(),
       DOM.new("p", {
-        className: "lead",
-        innerText: "Explore our open source drivers and solutions to build with confidence."
+        className: "hero-lead",
+        innerText: "Explore our open source solutions to build with confidence."
       }),
     )
     panel.append(
@@ -52,7 +52,7 @@ export class Hero {
 
   add_headline () {
     const h1 = DOM.new("h1", {
-      className: "headline",
+      className: "hero-headline",
       innerText: "Open code, ship faster."
     })
     this.$.headline = h1
@@ -60,10 +60,9 @@ export class Hero {
   }
 
   add_canvas () {
-    const wrap = DOM.new("div", { className: "waves-wrap" })
-    const canvas = DOM.new("canvas", {
-      id: "waves",
-    })
+    const wrap = DOM.new("div", { className: "hero-pixel-field" })
+    const canvas = DOM.new("canvas", { id: "hero-pixels" })
+    canvas.setAttribute("aria-hidden", "true")
 
     wrap.append(canvas)
     this.$.canvas = canvas
@@ -71,113 +70,123 @@ export class Hero {
   }
 
   init_background () {
-    const canvas = this.$.canvas;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
+    const canvas = this.$.canvas
+    const container = this.$.container
+    if (!canvas || !container) return
 
-    let w, h
+    const ctx = canvas.getContext("2d", { alpha: true })
+    const reduced_motion = window.matchMedia("(prefers-reduced-motion: reduce)")
+    const palette = ["#627eea", "#6e8ef2", "#64a9ee", "#62c5dd", "#8bd7cf", "#c1b4ef"]
 
-    let t = Date.now() / 1000
-    const waves = [
-      {
-        amplitude: 15,
-        frequency: 0.02,
-        phase: -t - 50,
-        speed: -0.01,
-        color: "rgba(212, 173, 240, 0.2)",
-        fill_color: "rgba(212, 173, 240, 0.03)",
-        lineWidth: 1
-      },
-      {
-        amplitude: 20,
-        frequency: 0.015,
-        phase: -t - 30,
-        speed: -0.014,
-        color: "rgba(180, 180, 230, 0.3)",
-        fill_color: "rgba(180, 180, 230, 0.05)",
-        lineWidth: 1
-      },
-      {
-        amplitude: 25,
-        frequency: 0.012,
-        phase: -t - 10,
-        speed: -0.017,
-        color: "rgba(130, 185, 225, 0.4)",
-        fill_color: "rgba(130, 185, 225, 0.075)",
-        lineWidth: 2
-      },
-      {
-        amplitude: 35,
-        frequency: 0.008,
-        phase: -t - 20,
-        speed: -0.02,
-        color: "rgba(110, 190, 220, 0.4)",
-        fill_color: "rgba(110, 190, 220, 0.1)",
-        lineWidth: 3
-      },
-    ];
+    let width = 0
+    let height = 0
+    let animation_frame
 
-    let resize_canvas = () => {
-      const new_width = this.$.container.clientWidth
-      const new_height = this.$.container.clientHeight
-      const dpr = window.devicePixelRatio
+    const clamp = (value, min = 0, max = 1) => Math.min(max, Math.max(min, value))
+    const mix = (a, b, amount) => a + (b - a) * amount
+    const fade = value => value * value * (3 - 2 * value)
+    const hash = (x, y) => {
+      const value = Math.sin(x * 127.1 + y * 311.7) * 43758.5453123
+      return value - Math.floor(value)
+    }
+    const noise = (x, y) => {
+      const x0 = Math.floor(x)
+      const y0 = Math.floor(y)
+      const tx = fade(x - x0)
+      const ty = fade(y - y0)
+      const top = mix(hash(x0, y0), hash(x0 + 1, y0), tx)
+      const bottom = mix(hash(x0, y0 + 1), hash(x0 + 1, y0 + 1), tx)
+      return mix(top, bottom, ty)
+    }
 
-      if (canvas.width !== new_width || canvas.height !== new_height) {
-        ctx.scale(dpr, dpr)
-        w = canvas.width = new_width * dpr
-        h = canvas.height = new_height * dpr
+    const draw = timestamp => {
+      const time = timestamp * 0.001
+      const cell = width < 640 ? 14 : 17
+      const gap = width < 640 ? 3 : 4
+      const columns = Math.ceil(width / cell) + 1
+      const rows = Math.ceil(height / cell) + 1
+      // The grid is centered on the field, so both edges are cropped equally.
+      const offset_x = Math.round((width - columns * cell) * 0.5)
+      const offset_y = Math.round((height - rows * cell) * 0.5)
+      const max_size = cell - gap
+      const min_size = Math.max(1, cell * 0.16)
 
-        canvas.style.width = `${new_width}px`
-        canvas.style.height = `${new_height}px`
+      ctx.clearRect(0, 0, width, height)
+
+      for (let row = 0; row < rows; row++) {
+        // Sample the height field at the cell center, which is also the anchor
+        // the square grows from and shrinks back to.
+        const center_y = offset_y + (row + 0.5) * cell
+        const v = center_y / Math.max(height, 1)
+
+        for (let column = 0; column < columns; column++) {
+          const center_x = offset_x + (column + 0.5) * cell
+          const u = center_x / Math.max(width, 1)
+
+          // Several crossing waves form a height field viewed directly from above.
+          const broad_wave = Math.sin(u * 8.5 + v * 5.2 - time * 1.25)
+          const cross_wave = Math.sin(u * -3.8 + v * 10.5 + time * 0.82)
+          const fine_wave = Math.sin((u + v) * 18 - time * 1.8)
+          const turbulence = noise(u * 5.2 + time * 0.11, v * 5.2 - time * 0.08)
+
+          let height_value = 0.5
+          height_value += broad_wave * 0.23
+          height_value += cross_wave * 0.13
+          height_value += fine_wave * 0.05
+          height_value += (turbulence - 0.5) * 0.36
+
+          const intensity = clamp(height_value)
+          const crest = Math.pow(intensity, 1.55)
+          const alpha = mix(0.08, 0.72, crest)
+          const palette_index = Math.min(palette.length - 1, Math.floor(intensity * palette.length))
+
+          const size = mix(min_size, max_size, crest)
+          const half = size * 0.5
+
+          ctx.globalAlpha = alpha
+          ctx.fillStyle = palette[palette_index]
+          ctx.fillRect(center_x - half, center_y - half, size, size)
+        }
+      }
+
+      ctx.globalAlpha = 1
+    }
+
+    const tick = timestamp => {
+      draw(timestamp)
+      animation_frame = requestAnimationFrame(tick)
+    }
+
+    const resize_canvas = () => {
+      const bounds = canvas.parentElement.getBoundingClientRect()
+      const dpr = Math.min(window.devicePixelRatio || 1, 2)
+      width = Math.max(1, Math.round(bounds.width))
+      height = Math.max(1, Math.round(bounds.height))
+
+      canvas.width = Math.round(width * dpr)
+      canvas.height = Math.round(height * dpr)
+      canvas.style.width = `${width}px`
+      canvas.style.height = `${height}px`
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+
+      if (reduced_motion.matches) draw(0)
+    }
+
+    const update_motion = () => {
+      cancelAnimationFrame(animation_frame)
+      if (reduced_motion.matches) {
+        draw(0)
+      } else {
+        animation_frame = requestAnimationFrame(tick)
       }
     }
 
-    let lerp = (t, x) => {
-      let c =  Math.sin(t) +  Math.cos(x*0.02)  + Math.cos(x)
-      return c < 0.5 ? 2*c*c : 1 - Math.pow(-2*c+2, 2)/2
-    }
+    reduced_motion.addEventListener("change", update_motion)
 
-    let frequency
-    let tick = () => {
-        ctx.clearRect(0, 0, w, h);
+    const resize_observer = new ResizeObserver(resize_canvas)
+    resize_observer.observe(container)
 
-        waves.forEach(wave => {
-          wave.phase += wave.speed;
-
-          ctx.beginPath();
-          ctx.strokeStyle = wave.color;
-          ctx.lineWidth = wave.lineWidth;
-
-          ctx.moveTo(-5, h)
-
-          for (let x = -5; x < w + 5; x++) {
-            frequency = 0.0003*lerp(t, x + wave.phase * 2)
-            const taper = Math.sin(((x + 100) / w) * Math.PI) + x / w
-
-            const dyn_amp = wave.amplitude * taper
-            const clamper = h / 300
-
-            const y = (h * 0.95) + (Math.sin(x * wave.frequency + wave.phase) * dyn_amp - (h * (x / w))*.1  +
-                                    Math.sin(x * frequency + wave.phase) * 5) * clamper
-            ctx.lineTo(x, y)
-          }
-
-          ctx.lineTo(w + 5, h)
-
-          ctx.stroke()
-          ctx.fillStyle = wave.fill_color;
-          ctx.fill()
-          t += 0.01
-        })
-
-        requestAnimationFrame(tick);
-      }
-
-    addEventListener('resize', resize_canvas)
-    addEventListener('DOMContentLoaded', resize_canvas)
-    setTimeout(resize_canvas, 100)
     resize_canvas()
-    tick()
+    update_motion()
   }
 }
-

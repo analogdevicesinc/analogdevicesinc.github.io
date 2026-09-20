@@ -2,101 +2,123 @@
 @use "mixin_icons";
 
 .hero {
+  position: relative;
   margin-top: 1em;
   flex-wrap: nowrap !important;
   background: var(--bg-color1);
+  border: 1px solid rgba(125, 125, 125, .5);
   border-radius: variable.$border-radius;
-  border: 1px solid rgba(125,125,125,.5);
-  overflow:hidden;
-}
-
-.panel {
   overflow: hidden;
-  position: relative;
-  width: 100%;
-  backdrop-filter: blur(10px);
-  border-radius: .4rem;
+  isolation: isolate;
+}
 
-  &.content {
-    display: flex;
-    flex-direction: column;
+.hero-panel {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-height: clamp(18rem, 42vw, 29rem);
+  overflow: hidden;
+  border-radius: inherit;
+
+  // Background-colored wash behind the copy so the text stays readable over the
+  // animated pixels. Anchored to the panel, so it always spans its full height.
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background:
+      radial-gradient(76% 108% at 20% 50%, var(--bg-color1-faded1) 0%, var(--bg-color1-faded1) 26%, rgba(0, 0, 0, 0) 78%),
+      linear-gradient(90deg, var(--bg-color1-faded2) 0%, var(--bg-color1-faded2) 24%, rgba(0, 0, 0, 0) 70%);
   }
 
-  .inner {
-    padding: calc(3vw + 4vh) calc(2vw + 2vh);
-    position: relative;
-    backdrop-filter: blur(2px);
+  // Vignette that blends the pixel field into the panel edges.
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background: radial-gradient(125% 125% at 50% 45%, rgba(0, 0, 0, 0) 52%, var(--bg-color1-faded1) 100%);
+    opacity: .85;
   }
 }
 
-.eyebrow {
+.hero-inner {
+  position: relative;
+  z-index: 2;
+  align-self: center;
+  max-width: 52rem;
+  padding: clamp(2.5rem, 7vw, 6rem) clamp(1.5rem, 5vw, 5rem);
+}
+
+.hero-eyebrow {
   @include mixin_icons.icons(("heart"));
 
-  text-transform: uppercase;
-  font-size: 0.8em;
+  color: var(--accent-color);
+  font-size: .8em;
   font-weight: bold;
   letter-spacing: 1.8px;
-  color: var(--accent-color);
+  text-transform: uppercase;
 
-  span:last-child:before {
-    content: '';
+  span:last-child::before {
+    content: "";
     display: inline-block;
     width: 1.5em;
     height: 1.5em;
-    margin: 0 .15em -0.3em .15em;
+    margin: 0 .15em -.3em;
     background-color: var(--accent-color);
     mask-image: var(--icon-heart);
   }
 }
 
-.headline {
-  font-size: clamp(1rem, 4.4vw, 2rem);
+.hero-headline {
   margin: .5em 0;
-  letter-spacing: -0.02em;
   color: var(--text-color1);
-
-  .word {
-    display: inline-block;
-
-    .char {
-      display: inline-block;
-      opacity: 1;
-    }
-  }
+  font-size: clamp(2rem, 5.8vw, 4.5rem);
+  line-height: .98;
+  letter-spacing: -.055em;
 }
 
-.lead {
+.hero-lead {
+  max-width: 52ch;
+  margin-bottom: 0;
   color: var(--text-color3);
   font-size: clamp(1rem, 1.6vw, 1.2rem);
   line-height: 1.5;
-  max-width: 74ch;
 }
 
-.card {
-  padding: 0.8em;
-  border-radius: variable.$border-radius;
-  border: 1px solid rgba(125,125,125,.8);
-  display: flex;
-  align-items: center;
-}
-
-.waves-wrap {
+.hero-pixel-field {
   position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
 
-  canvas#waves {
-    width: 100%;
+  canvas#hero-pixels {
     display: block;
+    width: 100%;
+    height: 100%;
+    filter: saturate(1.15);
+  }
+}
+
+@media (max-width: 640px) {
+  // Narrow screens put the copy across the full width, so the wash follows.
+  .hero-panel::before {
+    background:
+      radial-gradient(120% 78% at 50% 46%, var(--bg-color1-faded1) 0%, var(--bg-color1-faded1) 34%, rgba(0, 0, 0, 0) 84%),
+      linear-gradient(90deg, var(--bg-color1-faded2) 0%, var(--bg-color1-faded2) 46%, rgba(0, 0, 0, 0) 96%);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .headline,
-  .eyebrow,
-  .lead,
-  .card,
-  canvas#waves {
+  .hero-headline,
+  .hero-eyebrow,
+  .hero-lead,
+  canvas#hero-pixels {
     transition: none !important;
     animation: none !important;
   }
 }
-
