@@ -10,6 +10,10 @@
 # https://analogdevicesinc.github.io/system-level/contributing/ai/ -> https://raw.githubusercontent.com/analogdevicesinc/system-level/refs/heads/main/docs/contributing/ai.rst
 # see https://analogdevicesinc.github.io/doctools/metadata.json for the source pathname (docs, doc/source) and the doc branch (main, ci) for each repository
 
+# A python-based documentation MCP is available:
+# $ uvx --from 'adi-doctools[mcp]' adoc-mcp
+# $ <agent harness> mcp add adoc -- $(which adoc-mcp)
+
 User-agent: *
 Allow: /
 
