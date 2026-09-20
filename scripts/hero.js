@@ -78,6 +78,12 @@ export class Hero {
     const reduced_motion = window.matchMedia("(prefers-reduced-motion: reduce)")
     const palette = ["#627eea", "#6e8ef2", "#64a9ee", "#62c5dd", "#8bd7cf", "#c1b4ef"]
 
+    const ripples = []
+    const ripple_limit = 14
+    const ripple_speed = 250
+    const ripple_decay = 1.9
+    const ripple_width = 150
+
     let width = 0
     let height = 0
     let animation_frame
@@ -111,6 +117,15 @@ export class Hero {
       const max_size = cell - gap
       const min_size = Math.max(1, cell * 0.16)
 
+      for (let i = ripples.length - 1; i >= 0; i--) {
+        const ripple = ripples[i]
+        const age = Math.max(0, time - ripple.time)
+        ripple.amplitude = ripple.strength * Math.exp(-age * ripple_decay)
+        ripple.radius = age * ripple_speed
+
+        if (ripple.amplitude < 0.02) ripples.splice(i, 1)
+      }
+
       ctx.clearRect(0, 0, width, height)
 
       for (let row = 0; row < rows; row++) {
@@ -134,6 +149,19 @@ export class Hero {
           height_value += cross_wave * 0.13
           height_value += fine_wave * 0.05
           height_value += (turbulence - 0.5) * 0.36
+
+          for (let i = 0; i < ripples.length; i++) {
+            const ripple = ripples[i]
+            const dx = center_x - ripple.x
+            const dy = center_y - ripple.y
+            const front = Math.sqrt(dx * dx + dy * dy) - ripple.radius
+
+            if (front > ripple_width || front < -ripple_width) continue
+
+            height_value += Math.cos(front * 0.055) *
+              Math.exp(-Math.abs(front) / 70) *
+              ripple.amplitude * 0.42
+          }
 
           const intensity = clamp(height_value)
           const crest = Math.pow(intensity, 1.55)
@@ -172,15 +200,37 @@ export class Hero {
       if (reduced_motion.matches) draw(0)
     }
 
+    const spawn_ripple = event => {
+      if (reduced_motion.matches) return
+
+      const bounds = canvas.parentElement.getBoundingClientRect()
+      const x = event.clientX - bounds.left
+      const y = event.clientY - bounds.top
+      const strength = 1.15
+
+      ripples.push({
+        x,
+        y,
+        time: performance.now() * 0.001,
+        strength,
+        amplitude: strength,
+        radius: 0,
+      })
+
+      if (ripples.length > ripple_limit) ripples.shift()
+    }
+
     const update_motion = () => {
       cancelAnimationFrame(animation_frame)
       if (reduced_motion.matches) {
+        ripples.length = 0
         draw(0)
       } else {
         animation_frame = requestAnimationFrame(tick)
       }
     }
 
+    container.addEventListener("pointerdown", spawn_ripple, { passive: true })
     reduced_motion.addEventListener("change", update_motion)
 
     const resize_observer = new ResizeObserver(resize_canvas)

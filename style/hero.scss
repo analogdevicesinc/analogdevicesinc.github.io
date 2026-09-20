@@ -47,6 +47,7 @@
 
 .hero-inner {
   position: relative;
+  user-select: none;
   z-index: 2;
   align-self: center;
   max-width: 52rem;
