@@ -83,10 +83,14 @@ export class Hero {
     const ripple_speed = 250
     const ripple_decay = 1.9
     const ripple_width = 150
+    const tap_strength = 1.15
+    const ambient_strength = [0.18, 0.4]
+    const ambient_interval = [6.0, 10.0]
 
     let width = 0
     let height = 0
     let animation_frame
+    let next_ambient = 0
 
     const clamp = (value, min = 0, max = 1) => Math.min(max, Math.max(min, value))
     const mix = (a, b, amount) => a + (b - a) * amount
@@ -116,6 +120,21 @@ export class Hero {
       const offset_y = Math.round((height - rows * cell) * 0.5)
       const max_size = cell - gap
       const min_size = Math.max(1, cell * 0.16)
+
+      // Drop a faint impulse somewhere in the field every so often.
+      if (time >= next_ambient) {
+        const first_run = next_ambient === 0
+        next_ambient = time + mix(ambient_interval[0], ambient_interval[1], Math.random())
+
+        if (!first_run) {
+          add_ripple(
+            width * mix(0.18, 1, Math.random()),
+            height * Math.random(),
+            mix(ambient_strength[0], ambient_strength[1], Math.random()),
+            time,
+          )
+        }
+      }
 
       for (let i = ripples.length - 1; i >= 0; i--) {
         const ripple = ripples[i]
@@ -180,6 +199,12 @@ export class Hero {
       ctx.globalAlpha = 1
     }
 
+    const add_ripple = (x, y, strength, time) => {
+      ripples.push({ x, y, time, strength, amplitude: strength, radius: 0 })
+
+      if (ripples.length > ripple_limit) ripples.shift()
+    }
+
     const tick = timestamp => {
       draw(timestamp)
       animation_frame = requestAnimationFrame(tick)
@@ -204,26 +229,19 @@ export class Hero {
       if (reduced_motion.matches) return
 
       const bounds = canvas.parentElement.getBoundingClientRect()
-      const x = event.clientX - bounds.left
-      const y = event.clientY - bounds.top
-      const strength = 1.15
-
-      ripples.push({
-        x,
-        y,
-        time: performance.now() * 0.001,
-        strength,
-        amplitude: strength,
-        radius: 0,
-      })
-
-      if (ripples.length > ripple_limit) ripples.shift()
+      add_ripple(
+        event.clientX - bounds.left,
+        event.clientY - bounds.top,
+        tap_strength,
+        performance.now() * 0.001,
+      )
     }
 
     const update_motion = () => {
       cancelAnimationFrame(animation_frame)
       if (reduced_motion.matches) {
         ripples.length = 0
+        next_ambient = 0
         draw(0)
       } else {
         animation_frame = requestAnimationFrame(tick)
