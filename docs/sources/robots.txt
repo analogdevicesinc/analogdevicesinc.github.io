@@ -1,0 +1,9 @@
+# If JavaScript is available, console `app.page_actions.copy_markdown()` copies with richer content over the source doc files, such as absolute href and compiled content.
+# Source files are provided on GitHub
+# https://analogdevicesinc.github.io/<repository>/<path/to/page> -> https://raw.githubusercontent.com/analogdevicesinc/<repository>/refs/heads/<branch>/<pathname>/<path/to/page>(/index)?.(md|rst)
+# https://analogdevicesinc.github.io/system-level/contributing/ai/ -> https://raw.githubusercontent.com/analogdevicesinc/system-level/refs/heads/main/docs/contributing/ai.rst
+# See https://analogdevicesinc.github.io/doctools/metadata.json for the source pathname (docs, doc/source) and the doc branch (main, ci) for each repository
+User-agent: *
+Allow: /
+
+Sitemap: https://analogdevicesinc.github.io/sitemap.xml

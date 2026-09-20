@@ -36,4 +36,5 @@ html_theme = 'harmonic'
 html_theme_options = {}
 
 html_static_path = ["sources"]
+html_extra_path = ["sources/robots.txt"]
 html_favicon = path.join("sources", "icon.svg")
