@@ -33,7 +33,9 @@ landing_repo = True
 
 html_theme = 'harmonic'
 
-html_theme_options = {}
+html_theme_options = {
+    "landing_page": True,
+}
 
 html_static_path = ["sources"]
 html_extra_path = ["sources/robots.txt"]
