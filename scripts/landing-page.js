@@ -22,6 +22,8 @@ class Landing {
       return
 
     for (const [key, value] of Object.entries(this.parent.state.metadata.repotoc)) {
+      if (value.visibility === 'hidden')
+        continue
       let title = DOM.new('div', {
         'className': 'title',
       })
