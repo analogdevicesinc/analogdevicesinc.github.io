@@ -142,40 +142,32 @@ const LandingPage = () => {
   let landing, hero
   let active = false
   const init = () => {
+    if (document.visibilityState !== 'visible') {
+      window.addEventListener('focus', init, { once: true })
+      return
+    }
     landing = new Landing(app)
     hero = new Hero(app)
   }
-  const deinit = () => {
-    landing?.deinit()
-    hero?.deinit()
-    landing = hero = undefined
-  }
-  const activate = () => {
-    active = true
-    init()
-  }
-  const deactivate = () => {
+  window.addEventListener('app:hot_reload:doc_unload', () => {
     active = false
-    deinit()
-  }
-  let on_visible = () => {
-    activate()
-    window.addEventListener('app:hot_reload:doc_deinit', deactivate)
-    window.addEventListener('app:hot_reload:doc_init', () => {
-      active = app.state.repository === 'analogdevicesinc.github.io'
-    })
-    window.addEventListener('app:hot_reload:page_loaded', () => {
-      if (!active)
-        return
-      deinit()
+  })
+  window.addEventListener('app:hot_reload:doc_loaded', () => {
+    if (app.state.repository === 'analogdevicesinc.github.io')
+      active = true
+  })
+  window.addEventListener('app:hot_reload:page_unload', () => {
+    if (!active)
+      return
+    window.removeEventListener('focus', init)
+    landing.deinit()
+    hero.deinit()
+    landing = hero = undefined
+  })
+  window.addEventListener('app:hot_reload:page_loaded', () => {
+    if (active)
       init()
-    })
-  }
-
-  if (document.visibilityState === 'visible')
-    on_visible()
-  else
-    window.addEventListener('focus', on_visible, { once: true })
+  })
 }
 
 (async () => {
