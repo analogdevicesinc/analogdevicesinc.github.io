@@ -15,6 +15,8 @@ class Landing {
     this.parent = app
   }
   construct_repositories () {
+    if (!this.active)
+      return
     let repositories = DOM.get('.cards.repositories', this.$.body)
     if (!repositories)
       return
@@ -30,7 +32,7 @@ class Landing {
       description.innerText = value.description
       let entry = DOM.new('a', {
         'className': 'entry',
-        'href': key
+        'href': `${key}/`
       })
       let entry_inner = DOM.new('span')
       entry_inner.append(title)
@@ -102,11 +104,20 @@ class Landing {
     }
   }
   construct_collections () {
+    if (!this.active)
+      return
     DOM.getAll('.cards.collection', this.$.body).forEach((elem) => {
+      if (elem.dataset.populated)
+        return
+      elem.dataset.populated = ''
       this.construct_collection(elem)
     })
   }
+  deinit () {
+    this.active = false
+  }
   construct () {
+    this.active = true
     this.$.body = DOM.get('.body');
 
     (async () => {
@@ -126,9 +137,37 @@ class Landing {
 }
 
 const LandingPage = () => {
+  let landing, hero
+  let active = false
+  const init = () => {
+    landing = new Landing(app)
+    hero = new Hero(app)
+  }
+  const deinit = () => {
+    landing?.deinit()
+    hero?.deinit()
+    landing = hero = undefined
+  }
+  const activate = () => {
+    active = true
+    init()
+  }
+  const deactivate = () => {
+    active = false
+    deinit()
+  }
   let on_visible = () => {
-    new Landing(app)
-    new Hero(app)
+    activate()
+    window.addEventListener('app:hot_reload:doc_deinit', deactivate)
+    window.addEventListener('app:hot_reload:doc_init', () => {
+      active = app.state.repository === 'analogdevicesinc.github.io'
+    })
+    window.addEventListener('app:hot_reload:page_loaded', () => {
+      if (!active)
+        return
+      deinit()
+      init()
+    })
   }
 
   if (document.visibilityState === 'visible')

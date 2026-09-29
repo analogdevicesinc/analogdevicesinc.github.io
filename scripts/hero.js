@@ -6,6 +6,7 @@ export class Hero {
   constructor (app) {
     this.app = app
     this.$ = {}
+    this.cleanup = []
 
     this.construct()
 
@@ -17,6 +18,11 @@ export class Hero {
     this.init_background()
   }
 
+  deinit () {
+    this.cleanup.forEach(cleanup => cleanup())
+    this.cleanup = []
+  }
+
   mount () {
     const container = document.querySelector("div.hero")
 
@@ -24,6 +30,8 @@ export class Hero {
       console.warn("Hero: div.hero not on page.")
       return
     }
+    if (container.querySelector(".hero-panel"))
+      container.replaceChildren()
 
     const panel = DOM.new("section", { className: "hero-panel" })
     const inner = DOM.new("div", { className: "hero-inner" })
@@ -211,15 +219,16 @@ export class Hero {
     }
 
     const resize_canvas = () => {
-      const bounds = canvas.parentElement.getBoundingClientRect()
+      // ensure custom.min.css loaded
+      if (getComputedStyle(canvas.parentElement).position !== "absolute")
+        return
+      const field = canvas.parentElement
       const dpr = Math.min(window.devicePixelRatio || 1, 2)
-      width = Math.max(1, Math.round(bounds.width))
-      height = Math.max(1, Math.round(bounds.height))
+      width = Math.max(1, field.clientWidth)
+      height = Math.max(1, field.clientHeight)
 
       canvas.width = Math.round(width * dpr)
       canvas.height = Math.round(height * dpr)
-      canvas.style.width = `${width}px`
-      canvas.style.height = `${height}px`
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
 
       if (reduced_motion.matches) draw(0)
@@ -252,7 +261,14 @@ export class Hero {
     reduced_motion.addEventListener("change", update_motion)
 
     const resize_observer = new ResizeObserver(resize_canvas)
-    resize_observer.observe(container)
+    resize_observer.observe(canvas.parentElement)
+
+    this.cleanup.push(() => {
+      cancelAnimationFrame(animation_frame)
+      container.removeEventListener("pointerdown", spawn_ripple)
+      reduced_motion.removeEventListener("change", update_motion)
+      resize_observer.disconnect()
+    })
 
     resize_canvas()
     update_motion()
