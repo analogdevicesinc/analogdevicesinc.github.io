@@ -56,12 +56,12 @@ jobs:
     - name: Build doc
       working-directory: docs
       run: |
-        make html SPHINXOPTS="-W --keep-going"
+        make dirhtml SPHINXOPTS="-W --keep-going"
 
     - name: Preserve redirects
       run: |
-        mkdir -p docs/_build/html/documentation
-        cp -a redirects/documentation/. docs/_build/html/documentation/
+        mkdir -p docs/_build/dirhtml/documentation
+        cp -a redirects/documentation/. docs/_build/dirhtml/documentation/
 
     - name: Generate sitemap index
       working-directory: docs
@@ -70,12 +70,12 @@ jobs:
           jq -r '.repotoc[] | select(.visibility == "public") | .url_doc + "/sitemap.xml"' |
           jq -R -s 'split("\n") | map(select(length > 0))' |
           jq -r '"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<sitemapindex xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n" + (map("  <sitemap><loc>\(.)</loc></sitemap>") | join("\n")) + "\n</sitemapindex>"' \
-          > _build/html/sitemap.xml
+          > _build/dirhtml/sitemap.xml
 
     - name: Upload Pages artifact
       uses: actions/upload-pages-artifact@v5
       with:
-        path: docs/_build/html
+        path: docs/_build/dirhtml
 
   deploy:
     needs: build-doc
