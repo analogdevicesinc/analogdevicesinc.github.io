@@ -10,6 +10,8 @@
 # https://analogdevicesinc.github.io/system-level/contributing/ai/ -> https://raw.githubusercontent.com/analogdevicesinc/system-level/refs/heads/main/docs/contributing/ai.rst
 # see https://analogdevicesinc.github.io/doctools/metadata.json for the source pathname (docs, doc/source) and the doc branch (main, ci) for each repository
 
+# A HTTP MCP is available:
+# $ <agent harness> mcp add --transport http adi-developer-docs https://analog.mcp.kapa.ai
 # A python-based documentation MCP is available:
 # $ uvx --from 'adi-doctools[mcp]' adoc-mcp
 # $ <agent harness> mcp add adoc -- $(which adoc-mcp)
