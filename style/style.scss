@@ -77,6 +77,130 @@ header #logo {
     }
 }
 
+[hidden] {
+    display: none !important;
+}
+
+.tabs {
+    --line: color-mix(in srgb, #4b545d calc(var(--is-dark-theme, 0) * 100%), #b7bbc3);
+
+    display: flex;
+    gap: 4px;
+    margin-bottom: 1.5em;
+    overflow-x: auto;
+    scrollbar-width: none;
+    box-shadow: inset 0 -1px 0 var(--line);
+
+    @media (max-width: variable.$screen-1) {
+        margin-inline: -1rem;
+        padding-inline: 1rem;
+        mask-image: linear-gradient(to right, transparent, #000 1em, #000 calc(100% - 1em), transparent);
+    }
+
+    button {
+        flex: none;
+        white-space: nowrap;
+        padding: 12px;
+        font: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 20px;
+        color: var(--text-color1);
+        background: none;
+        border: none;
+        border-bottom: 1px solid var(--line);
+        border-radius: 4px 4px 0 0;
+        cursor: pointer;
+
+        &:hover {
+            background: rgba(183, 187, 195, .2);
+            border-bottom-color: #5e6773;
+        }
+
+        &[aria-selected="true"] {
+            color: var(--accent-color);
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 11px;
+
+            &:hover {
+                color: color-mix(in srgb, var(--accent-color) calc(100% - var(--is-light-theme, 1) * 100%), #00427a);
+                background: rgba(146, 190, 252, .3);
+                border-bottom-color: currentColor;
+            }
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--accent-color);
+            outline-offset: -2px;
+        }
+    }
+}
+
+.cards.repositories .entry {
+    & > span {
+        display: flex;
+        flex-direction: column;
+        gap: .75em;
+    }
+
+    .head {
+        display: flex;
+        align-items: center;
+        gap: .75em;
+        white-space: nowrap;
+    }
+
+    .icon {
+        flex: none;
+        --fg: #101820;
+        --fg-dark: var(--text-color1);
+        --bg: #f0f1f3;
+        --bg-dark: #293038;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        padding: 4px;
+        box-sizing: border-box;
+        border-radius: 4px;
+        color: color-mix(in srgb, var(--fg-dark) calc(var(--is-dark-theme, 0) * 100%), var(--fg));
+        background: color-mix(in srgb, var(--bg-dark) calc(var(--is-dark-theme, 0) * 100%), var(--bg));
+
+        &:is([data-category="driver"], [data-category="library"]) {
+            --fg: #16744d;
+            --fg-dark: #6fcea6;
+            --bg: #e4f6ef;
+            --bg-dark: #114a32;
+        }
+
+        &:is([data-category="hdl"], [data-category="sdk"]) {
+            --fg: #8e3dc7;
+            --fg-dark: #d4adf0;
+            --bg: #f6eefc;
+            --bg-dark: #431c5f;
+        }
+
+        svg {
+            display: block;
+            margin: 0;
+        }
+    }
+
+    .tag {
+        font-size: .75em;
+        font-weight: bold;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: var(--text-color3);
+    }
+
+    .title {
+        padding-bottom: 0;
+    }
+}
+
 .collection-category {
     color: var(--text-color2);
     text-transform: uppercase;

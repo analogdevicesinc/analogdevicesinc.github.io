@@ -82,6 +82,20 @@
   letter-spacing: -.055em;
 }
 
+.hero-word {
+  display: inline-block;
+  white-space: nowrap;
+  background: linear-gradient(90deg,
+    color-mix(in srgb, #92befc calc(var(--is-dark-theme, 0) * 100%), #0067b9),
+    color-mix(in srgb, #d4adf0 calc(var(--is-dark-theme, 0) * 100%), #8e3dc7) 60%,
+    color-mix(in srgb, #68c6ee calc(var(--is-dark-theme, 0) * 100%), #0e6d95));
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  padding-bottom: .2em;
+  margin-bottom: -.2em;
+}
+
 .hero-lead {
   max-width: 52ch;
   margin-bottom: 0;

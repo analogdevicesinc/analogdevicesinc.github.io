@@ -2,6 +2,18 @@
 
 import { DOM } from '@shared/scripts/dom.js'
 
+const words = [
+  'ship faster.',
+  'share it.',
+  'fork it.',
+  'build together.',
+  'learn from it.',
+  'improve it.',
+  'make it yours.',
+  'trust it.',
+]
+const glyphs = '█▓▒░<>/{}[]=+*#01'
+
 export class Hero {
   constructor (app) {
     this.app = app
@@ -16,6 +28,7 @@ export class Hero {
   construct () {
     this.mount()
     this.init_background()
+    this.init_words()
   }
 
   deinit () {
@@ -59,12 +72,46 @@ export class Hero {
   }
 
   add_headline () {
-    const h1 = DOM.new("h1", {
-      className: "hero-headline",
-      innerText: "Open code, ship faster."
-    })
+    const h1 = DOM.new("h1", { className: "hero-headline" })
+    const word = DOM.new("span", { className: "hero-word", innerText: words[0] })
+    h1.append("Open code, ", word)
     this.$.headline = h1
+    this.$.word = word
     return h1
+  }
+
+  init_words () {
+    const word = this.$.word
+    if (!word || window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+      return
+
+    let index = 0
+    let frame
+    const scramble = target => {
+      const start = performance.now()
+      const step = now => {
+        const progress = Math.min(1, (now - start) / 650)
+        const settled = Math.floor(progress * target.length)
+        let text = target.slice(0, settled)
+        for (let i = settled; i < target.length; i++)
+          text += target[i] === ' ' ? ' ' : glyphs[Math.floor(Math.random() * glyphs.length)]
+        word.textContent = text
+        if (progress < 1)
+          frame = requestAnimationFrame(step)
+      }
+      frame = requestAnimationFrame(step)
+    }
+    const timer = setInterval(() => {
+      if (document.visibilityState !== 'visible')
+        return
+      index = (index + 1) % words.length
+      scramble(words[index])
+    }, 3200)
+
+    this.cleanup.push(() => {
+      clearInterval(timer)
+      cancelAnimationFrame(frame)
+    })
   }
 
   add_canvas () {

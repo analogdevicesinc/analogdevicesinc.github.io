@@ -11,12 +11,25 @@ ARROW = (
     '<path d="M5 12h14M13 6l6 6-6 6"/></svg>'
 )
 
+
+def split_list(value):
+    items = re.split(r'(?<!\\)[ ,]', value or '')
+    return [d.replace('\\ ', ' ') for d in items if d]
+
+
+def section_head(section, title, category):
+    if category is not None:
+        section += nodes.inline(text=category, classes=['collection-category'])
+    section += nodes.title(text=title)
+
+
 class directive_cards(Directive):
     """
     Creates the entry-point for dynamic cards.
     """
     option_spec = {
         'class': directives.class_option,
+        'category': directives.unchanged_required,
     }
     has_content = True
     add_index = True
@@ -38,8 +51,7 @@ class directive_cards(Directive):
         content = nodes.paragraph()
         self.state.nested_parse(self.content, self.content_offset, content)
 
-        title = nodes.title(text=self.arguments[0])
-        section += title
+        section_head(section, self.arguments[0], self.options.get('category'))
         section += content
         section += node_cards
 
@@ -54,6 +66,7 @@ class directive_cards_collection(Directive):
         'class': directives.class_option,
         'category': directives.unchanged_required,
         'filter-label': directives.unchanged_required,
+        'tabs': directives.unchanged,
         'view-all': directives.uri,
     }
     has_content = True
@@ -66,9 +79,8 @@ class directive_cards_collection(Directive):
     def run(self):
         set_classes(self.options)
 
-        label = self.options.pop('filter-label', None)
-        label = re.split(r'(?<!\\)[ ,]', label)
-        label = [d.replace('\\ ', ' ') for d in label if d]
+        label = split_list(self.options.pop('filter-label', None))
+        tabs = split_list(self.options.pop('tabs', None))
 
         section = nodes.section()
         section['ids'].append(nodes.make_id(self.arguments[0]))
@@ -95,11 +107,13 @@ class directive_cards_collection(Directive):
         content = nodes.paragraph()
         self.state.nested_parse(self.content, self.content_offset, content)
 
-        title = nodes.title(text=self.arguments[0])
-        if category is not None:
-            section += nodes.inline(text=category, classes=['collection-category'])
-        section += title
+        section_head(section, self.arguments[0], category)
         section += content
+        if tabs:
+            node_tabs = nodes.container(classes=['collection-tabs'])
+            for tab in tabs:
+                node_tabs += nodes.inline(text=tab, classes=['tab'])
+            section += node_tabs
         section += node_cards
 
         return [section]
@@ -119,4 +133,3 @@ def setup(app):
         "parallel_read_safe": True,
         "parallel_write_safe": True,
     }
-
