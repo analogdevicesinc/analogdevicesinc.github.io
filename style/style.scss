@@ -92,18 +92,71 @@ header #logo {
         margin: -1em -1em .5em -1em;
         border-radius: variable.$border-radius variable.$border-radius 0 0;
         overflow: hidden;
+        aspect-ratio: 16 / 9;
 
-        img {
-          object-fit: cover;
-          margin: 0 auto;
-          max-height: 20em;
-          width: 100%;
+        &:has(canvas) {
+            background: transparent;
         }
-      }
+
+        canvas {
+            background: color-mix(in srgb, var(--placeholder) calc(8% + var(--is-dark-theme, 0) * 14%), transparent);
+        }
+
+        img,
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    }
     .entry > span {
         display: flex;
         flex-direction: column;
         justify-content: space-between;
+    }
+}
+
+.cards.collection.grid {
+    grid-auto-rows: 1fr;
+}
+
+.cards.collection .view-all-card {
+    margin: 0;
+
+    > a {
+        display: block;
+        height: 100%;
+    }
+}
+
+.cards.collection .entry.view-all {
+    & > span {
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: .5em;
+        border-style: dashed;
+    }
+
+    &:hover > span {
+        border-style: solid;
+        border-color: var(--text-color3);
+    }
+
+    .title,
+    .view-all-icon {
+        color: var(--text-color2);
+        padding-bottom: 0;
+    }
+
+    .view-all-icon {
+        margin: 0;
+        transition: transform ease .125s;
+    }
+
+    &:hover .view-all-icon {
+        transform: translateX(.25em);
     }
 }
 

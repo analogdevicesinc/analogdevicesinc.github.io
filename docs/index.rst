@@ -10,11 +10,13 @@
    :class: grid eval
    :category: User guides
    :filter-label: eval user-guide
+   :view-all: system-level/solutions/reference-designs/
 
 .. cards-collection:: Workshops
    :class: grid workshop
    :category: Learning
    :filter-label: workshop
+   :view-all: system-level/learning/
 
 Sponsors of
 -----------

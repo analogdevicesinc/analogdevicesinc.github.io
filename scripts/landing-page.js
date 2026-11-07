@@ -4,6 +4,7 @@ import { WaitEvent } from '@shared/scripts/event.js'
 import { DOM } from '@shared/scripts/dom.js'
 
 import { Hero } from './hero.js'
+import { placeholder } from './placeholder.js'
 
 class Landing {
   constructor (app) {
@@ -57,27 +58,25 @@ class Landing {
   }
   construct_collection (dom) {
     const items = this.collect_collections(dom.id)
-    for (const [key, value] of Object.entries(items)) {
+    for (const [key, value] of Object.entries(items).slice(0, 5)) {
       let entry = DOM.new('a', {
         'className': 'entry',
         'href': `${value.docname}.html`
       })
       let entry_inner = DOM.new('span')
+      let image_container = DOM.new('div', {
+        'className': 'img-container',
+      })
       if (value.image) {
-        let image_container = DOM.new('div', {
-          'className': 'img-container',
-        })
         let image = DOM.new('img', {
-          'src': value.image
+          'src': value.image,
+          'loading': 'lazy'
         })
         image_container.append(image)
-        entry_inner.append(image_container)
       } else {
-        let _image = DOM.new('span', {
-          'className': 'spacer',
-        })
-        entry_inner.append(_image)
+        image_container.append(placeholder(key))
       }
+      entry_inner.append(image_container)
       let title = DOM.new('div', {
         'className': 'title',
       })
@@ -102,7 +101,7 @@ class Landing {
       })
       entry_inner.append(_spacer)
       entry.append(entry_inner)
-      dom.append(entry)
+      dom.insertBefore(entry, dom.querySelector('.view-all-card'))
     }
   }
   construct_collections () {

@@ -4,6 +4,13 @@ from docutils import nodes
 
 import re
 
+ARROW = (
+    '<svg class="view-all-icon no-background" viewBox="0 0 24 24" width="1.25em" '
+    'height="1.25em" fill="none" stroke="currentColor" stroke-width="2" '
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    '<path d="M5 12h14M13 6l6 6-6 6"/></svg>'
+)
+
 class directive_cards(Directive):
     """
     Creates the entry-point for dynamic cards.
@@ -46,7 +53,8 @@ class directive_cards_collection(Directive):
     option_spec = {
         'class': directives.class_option,
         'category': directives.unchanged_required,
-        'filter-label': directives.unchanged_required
+        'filter-label': directives.unchanged_required,
+        'view-all': directives.uri,
     }
     has_content = True
     add_index = True
@@ -72,6 +80,18 @@ class directive_cards_collection(Directive):
             classes=classes_
         )
         node_cards['ids'].append(",".join(label))
+        if 'view-all' in self.options:
+            view_all = nodes.reference(
+                '', '', refuri=self.options['view-all'],
+                classes=['entry', 'view-all'],
+            )
+            inner = nodes.inline()
+            inner += nodes.inline(text='View all', classes=['title'])
+            inner += nodes.raw('', ARROW, format='html')
+            view_all += inner
+            wrapper = nodes.paragraph(classes=['view-all-card'])
+            wrapper += view_all
+            node_cards += wrapper
         content = nodes.paragraph()
         self.state.nested_parse(self.content, self.content_offset, content)
 
