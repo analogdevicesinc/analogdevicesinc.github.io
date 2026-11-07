@@ -75,7 +75,7 @@ class Landing {
 
     const repos = Object.entries(repotoc).filter(([, value]) => value.visibility !== 'hidden')
     for (const [key, value] of repos) {
-      const entry = DOM.new('a', { className: 'entry', href: source.href(`${key}/`) })
+      const entry = DOM.new('a', { className: 'entry', href: `${key}/` })
       entry.dataset.category = value.category
       const inner = DOM.new('span')
       const head = DOM.new('span', { className: 'head' })
@@ -107,12 +107,12 @@ class Landing {
       .filter(([, value]) => labels.every(label => value.label.includes(label)))
   }
   card (key, value) {
-    const entry = DOM.new('a', { className: 'entry', href: source.href(`${value.docname}.html`) })
+    const entry = DOM.new('a', { className: 'entry', href: `${value.docname}.html` })
     const inner = DOM.new('span')
     const image_container = DOM.new('div', { className: 'img-container' })
     if (value.image) {
       image_container.append(DOM.new('img', {
-        src: source.href(value.image),
+        src: value.image,
         loading: 'lazy',
         alt: '',
       }))
