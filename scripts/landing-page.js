@@ -141,10 +141,6 @@ const LandingPage = () => {
   let landing, hero
   let active = false
   const init = () => {
-    if (document.visibilityState !== 'visible') {
-      window.addEventListener('focus', init, { once: true })
-      return
-    }
     landing = new Landing(app)
     hero = new Hero(app)
   }
@@ -156,9 +152,8 @@ const LandingPage = () => {
       active = true
   })
   window.addEventListener('app:hot_reload:page_unload', () => {
-    if (!active)
+    if (!active || !landing)
       return
-    window.removeEventListener('focus', init)
     landing.deinit()
     hero.deinit()
     landing = hero = undefined
