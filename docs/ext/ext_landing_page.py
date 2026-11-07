@@ -18,9 +18,9 @@ def split_list(value):
 
 
 def section_head(section, title, category):
+    section += nodes.title(text=title)
     if category is not None:
         section += nodes.inline(text=category, classes=['collection-category'])
-    section += nodes.title(text=title)
 
 
 class directive_cards(Directive):

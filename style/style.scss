@@ -6,12 +6,21 @@
 #left,
 header #logo,
 #right #show-repotoc,
-#right #show-localtoc,
 .vertical-divider,
 .sphinxsidebarwrapper,
-.page-actions,
-.localtoc {
+.page-actions {
     display: none !important;
+}
+
+.landing-page .body > section > h1 {
+    display: none;
+}
+
+@media (min-width: variable.$screen-1) {
+    .landing-page .localtoc {
+        margin-top: calc(var(--hero-height, 0px) + 1rem);
+        margin-bottom: calc(-1 * var(--hero-height, 0px) - 1rem);
+    }
 }
 
 header #logo {
@@ -21,8 +30,8 @@ header #logo {
 
 @media (min-width: variable.$screen-1) and (max-width: variable.$screen-3) {
     .bodywrapper {
-        width: calc(90vw);
-        margin-left: calc(50vw - 45vw);
+        width: calc(65vw + 4.25rem);
+        margin-left: 5vw;
     }
 
     header #right {
@@ -201,7 +210,13 @@ header #logo {
     }
 }
 
+section:has(> .collection-category) {
+    display: flex;
+    flex-direction: column;
+}
+
 .collection-category {
+    order: -1;
     color: var(--text-color2);
     text-transform: uppercase;
     font-weight: bold;

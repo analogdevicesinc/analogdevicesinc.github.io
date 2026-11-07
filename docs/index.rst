@@ -1,5 +1,8 @@
 :body-class: landing-page
 
+ADI Open Source
+===============
+
 .. flex::
    :class: hero
 
@@ -13,15 +16,15 @@
    :filter-label: eval user-guide
    :view-all: system-level/solutions/reference-designs/
 
-.. cards-collection:: Learn by doing
+.. cards-collection:: Learning
    :class: grid learning
-   :category: Learning
+   :category: Hands-on
    :filter-label: workshop
    :tabs: workshop tutorial demo
    :view-all: system-level/learning/
 
-Sponsors of
------------
+Sponsoring
+----------
 
 .. grid::
    :columns: 3

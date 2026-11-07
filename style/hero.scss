@@ -1,13 +1,33 @@
 @use "variable";
 @use "mixin_icons";
 
+.landing-page .documentwrapper {
+  overflow-x: clip;
+}
+
+.landing-page {
+  --gutter: 1rem;
+
+  @media (min-width: variable.$screen-1) and (max-width: variable.$screen-3) {
+    --gutter: calc(5vw + 1rem);
+  }
+
+  @media (min-width: variable.$screen-3) {
+    --gutter: calc(40vw - 19rem);
+  }
+
+  .body {
+    overflow-x: visible;
+  }
+}
+
 .hero {
   position: relative;
-  margin-top: 1em;
+  width: 100vw;
+  margin-left: calc(-1 * var(--gutter));
   flex-wrap: nowrap !important;
   background: var(--bg-color1);
-  border: 1px solid rgba(125, 125, 125, .5);
-  border-radius: variable.$border-radius;
+  border-bottom: 1px solid rgba(125, 125, 125, .5);
   overflow: hidden;
   isolation: isolate;
 }
@@ -16,7 +36,7 @@
   position: relative;
   display: flex;
   width: 100%;
-  min-height: clamp(18rem, 42vw, 29rem);
+  min-height: clamp(18rem, 40vw, 44rem);
   overflow: hidden;
   border-radius: inherit;
 
@@ -50,8 +70,8 @@
   user-select: none;
   z-index: 2;
   align-self: center;
-  max-width: 52rem;
-  padding: clamp(2.5rem, 7vw, 6rem) clamp(1.5rem, 5vw, 5rem);
+  max-width: calc(52rem + var(--gutter));
+  padding: clamp(2.5rem, 7vw, 6rem) 1rem clamp(2.5rem, 7vw, 6rem) var(--gutter);
 }
 
 .hero-eyebrow {

@@ -29,6 +29,21 @@ export class Hero {
     this.mount()
     this.init_background()
     this.init_words()
+    this.init_height()
+  }
+
+  init_height () {
+    const container = this.$.container
+    if (!container)
+      return
+    const root = document.documentElement.style
+    const observer = new ResizeObserver(() =>
+      root.setProperty('--hero-height', `${container.offsetHeight}px`))
+    observer.observe(container)
+    this.cleanup.push(() => {
+      observer.disconnect()
+      root.removeProperty('--hero-height')
+    })
   }
 
   deinit () {
