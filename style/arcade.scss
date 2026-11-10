@@ -1,0 +1,267 @@
+// ADI Arcade overlay (scripts/arcade). Always dark; sits above the whole site.
+
+html.adi-arcade-open {
+  overflow: hidden;
+}
+
+.adi-arcade {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  color: #e9eef5;
+  background: #070b12;
+  font-family: inherit;
+  user-select: none;
+  -webkit-user-select: none;
+  overscroll-behavior: contain;
+
+  &:fullscreen {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.adi-arcade-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.adi-arcade-toolbar {
+  position: absolute;
+  z-index: 3;
+  top: max(16px, env(safe-area-inset-top));
+  right: max(16px, env(safe-area-inset-right));
+  display: flex;
+  gap: 8px;
+}
+
+.adi-arcade-tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid rgba(233, 238, 245, .18);
+  border-radius: 999px;
+  background: rgba(14, 22, 32, .7);
+  backdrop-filter: blur(6px);
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    border-color: rgba(139, 215, 207, .7);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #8bd7cf;
+    outline-offset: 2px;
+  }
+
+  &[data-action="close"] {
+    width: 36px;
+    padding: 0;
+  }
+
+  svg {
+    display: block;
+    margin: 0;
+  }
+}
+
+.adi-arcade[data-view="menu"] .adi-arcade-tool[data-action="menu"],
+.adi-arcade[data-view="game"] .adi-arcade-menu {
+  display: none;
+}
+
+.adi-arcade-menu {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  padding: 4rem 1.5rem;
+  overflow: auto;
+  background: radial-gradient(ellipse at center, rgba(7, 11, 18, .35), rgba(7, 11, 18, .85) 75%);
+}
+
+.adi-arcade-brand {
+  text-align: center;
+}
+
+.adi-arcade .adi-arcade-title {
+  margin: 0 0 .25em;
+  padding: 0;
+  border: 0;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -.03em;
+  color: #fff;
+}
+
+.adi-arcade-subtitle {
+  margin: 0;
+  color: rgba(233, 238, 245, .6);
+}
+
+.adi-arcade-games {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 19rem));
+  justify-content: center;
+  gap: 1rem;
+  width: min(100%, 80rem);
+}
+
+// Each card takes its accent from the game (--game-color, an ADI hue).
+.adi-arcade-game {
+  --game-color: #8bd7cf;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .75rem;
+  padding: 1.25rem;
+  text-align: left;
+  border: 1px solid color-mix(in srgb, var(--game-color) 30%, transparent);
+  border-radius: 12px;
+  background:
+    radial-gradient(120% 120% at 0% 0%, color-mix(in srgb, var(--game-color) 14%, transparent), transparent 60%),
+    rgba(14, 22, 32, .78);
+  backdrop-filter: blur(8px);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color .15s ease, transform .15s ease, background .15s ease;
+
+  &:not(:disabled):hover {
+    border-color: var(--game-color);
+    transform: translateY(-2px);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--game-color);
+    outline-offset: 3px;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: .6;
+  }
+}
+
+.adi-arcade-game-icon {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  color: var(--game-color);
+
+  svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+  }
+}
+
+.adi-arcade-game-text {
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+}
+
+.adi-arcade-game-name {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.adi-arcade-game-tagline {
+  font-size: .95rem;
+  line-height: 1.4;
+  color: rgba(233, 238, 245, .72);
+}
+
+.adi-arcade-game-controls {
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--game-color);
+}
+
+.adi-arcade-game:disabled {
+  .adi-arcade-game-icon,
+  .adi-arcade-game-controls {
+    color: rgba(233, 238, 245, .5);
+  }
+}
+
+// Phones: one column of short rows, icon beside the text, so the three games
+// fit without scrolling.
+@media (max-width: 640px), (max-height: 560px) {
+  .adi-arcade-menu {
+    gap: 1.25rem;
+    padding: 3.75rem 1rem 1.5rem;
+  }
+
+  .adi-arcade-subtitle {
+    font-size: .85rem;
+  }
+
+  .adi-arcade-games {
+    grid-template-columns: minmax(0, 24rem);
+    gap: .6rem;
+  }
+
+  .adi-arcade-game {
+    flex-direction: row;
+    align-items: center;
+    gap: .9rem;
+    padding: .8rem 1rem;
+  }
+
+  .adi-arcade-game-icon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .adi-arcade-game-text {
+    gap: .15rem;
+  }
+
+  .adi-arcade-game-name {
+    font-size: 1.05rem;
+  }
+
+  .adi-arcade-game-tagline {
+    font-size: .85rem;
+  }
+
+  .adi-arcade-game-controls {
+    font-size: .68rem;
+  }
+}
+
+// Short and wide (phones in landscape): keep the cards side by side.
+@media (max-height: 560px) and (min-width: 641px) {
+  .adi-arcade-games {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: min(100%, 48rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .adi-arcade-game {
+    transition: none;
+  }
+}

@@ -1,0 +1,167 @@
+@use "variable";
+
+// electronica banner (docs/index.rst), the Play button is injected by
+// event-banner.js. It contrasts with the page so it reads as a branded block:
+// dark on the light theme, light on the dark theme. The button inverts the
+// banner: white with the banner color as text on the dark banner, the page
+// background with the banner color as text on the light one.
+
+@mixin light-banner {
+  --banner-bg1: #f5f8fc;
+  --banner-bg2: #eaf1f9;
+  --banner-bg3: #efedfb;
+  --banner-glow1: rgba(98, 197, 221, .35);
+  --banner-glow2: rgba(193, 180, 239, .4);
+  --banner-dots: rgba(14, 109, 149, .3);
+  --banner-border: rgba(125, 125, 125, .3);
+  --banner-text: #0a111c;
+  --banner-eyebrow: #0e6d95;
+  --banner-meta: rgba(10, 17, 28, .8);
+  --banner-lead: rgba(10, 17, 28, .65);
+  --banner-button-bg: var(--bg-color1);
+}
+
+.event-banner {
+  --banner-bg1: #0a111c;
+  --banner-bg2: #101a2c;
+  --banner-bg3: #17163a;
+  --banner-glow1: rgba(98, 197, 221, .28);
+  --banner-glow2: rgba(193, 180, 239, .22);
+  --banner-dots: rgba(139, 215, 207, .55);
+  --banner-border: rgba(125, 125, 125, .5);
+  --banner-text: #e9eef5;
+  --banner-eyebrow: #8bd7cf;
+  --banner-meta: rgba(233, 238, 245, .85);
+  --banner-lead: rgba(233, 238, 245, .7);
+  --banner-button-bg: #fff;
+  --banner-button-text: var(--banner-bg2);
+
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 2rem;
+  align-items: center;
+  margin: 1rem 0 2rem;
+  padding: clamp(1.5rem, 4vw, 2.75rem);
+  border: 1px solid var(--banner-border);
+  border-radius: variable.$border-radius;
+  color: var(--banner-text);
+  background:
+    radial-gradient(120% 140% at 100% 0%, var(--banner-glow1), transparent 55%),
+    radial-gradient(90% 120% at 85% 100%, var(--banner-glow2), transparent 60%),
+    linear-gradient(120deg, var(--banner-bg1) 0%, var(--banner-bg2) 55%, var(--banner-bg3) 100%);
+
+  // Pixel-grid motif, echoing the hero, fading in toward the button side.
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image: radial-gradient(circle, var(--banner-dots) 0 1.6px, transparent 2.2px);
+    background-size: 16px 16px;
+    mask-image: linear-gradient(100deg, transparent 30%, #000 85%);
+    opacity: .7;
+  }
+
+  > .container {
+    grid-column: 1;
+    margin: 0;
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
+body.dark .event-banner {
+  @include light-banner;
+}
+
+@media (prefers-color-scheme: dark) {
+  body:not(.light) .event-banner {
+    @include light-banner;
+  }
+}
+
+.event-banner-eyebrow {
+  font-size: .8em;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--banner-eyebrow);
+}
+
+.event-banner-title {
+  margin-top: .35em !important;
+  font-size: clamp(1.8rem, 4.5vw, 3rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -.03em;
+}
+
+.event-banner-meta {
+  margin-top: .6em !important;
+  font-weight: 600;
+  color: var(--banner-meta);
+}
+
+.event-banner-lead {
+  margin-top: .9em !important;
+  max-width: 52ch;
+  line-height: 1.5;
+  color: var(--banner-lead);
+}
+
+// Flat pill button, no border, shadow or glow.
+.event-banner-play {
+  grid-column: 2;
+  grid-row: 1 / span 4;
+  display: inline-flex;
+  align-items: center;
+  gap: .5em;
+  padding: .75em 1.4em;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--banner-button-text);
+  background: var(--banner-button-bg);
+  cursor: pointer;
+
+  &:hover {
+    background: color-mix(in srgb, var(--banner-button-bg) 88%, var(--banner-button-text));
+  }
+
+  &:focus-visible {
+    outline: .125em solid var(--banner-text);
+    outline-offset: .2em;
+  }
+
+  &[data-state="loading"] {
+    cursor: progress;
+    opacity: .7;
+  }
+
+  // The triangle sits right of center in its viewBox; pull it left so the
+  // icon and label look balanced in the pill.
+  svg {
+    display: block;
+    margin: 0 0 0 -.3em;
+  }
+}
+
+@media (max-width: 640px) {
+  .event-banner {
+    grid-template-columns: 1fr;
+  }
+
+  .event-banner-play {
+    grid-column: 1;
+    grid-row: auto;
+    justify-self: start;
+    margin-top: 1.25rem;
+  }
+}

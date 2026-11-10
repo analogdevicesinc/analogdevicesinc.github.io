@@ -118,6 +118,30 @@ class directive_cards_collection(Directive):
 
         return [section]
 
+class directive_section(Directive):
+    """
+    Creates a titled section holding arbitrary content, as a sibling of the
+    cards sections, so what follows it is not nested under its title.
+    """
+    option_spec = {
+        'class': directives.class_option,
+        'category': directives.unchanged_required,
+    }
+    has_content = True
+    final_argument_whitespace = True
+
+    required_arguments = 1
+    optional_arguments = 0
+
+    def run(self):
+        set_classes(self.options)
+        section = nodes.section(classes=self.options.get('classes', []))
+        section['ids'].append(nodes.make_id(self.arguments[0]))
+        section_head(section, self.arguments[0], self.options.get('category'))
+        self.state.nested_parse(self.content, self.content_offset, section)
+
+        return [section]
+
 def builder_inited(app):
     if app.builder.format == 'html':
         app.add_js_file("custom.umd.js", priority=500, loading_method="async")
@@ -126,6 +150,7 @@ def builder_inited(app):
 def setup(app):
     app.add_directive('cards', directive_cards)
     app.add_directive('cards-collection', directive_cards_collection)
+    app.add_directive('section', directive_section)
 
     app.connect("builder-inited", builder_inited)
 

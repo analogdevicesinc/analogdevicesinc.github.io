@@ -4,6 +4,7 @@ import { WaitEvent } from '@shared/scripts/event.js'
 import { DOM } from '@shared/scripts/dom.js'
 
 import { Hero } from './hero.js'
+import { EventBanner } from './event-banner.js'
 import { placeholder } from './placeholder.js'
 import * as source from './source.js'
 
@@ -75,7 +76,7 @@ class Landing {
 
     const repos = Object.entries(repotoc).filter(([, value]) => value.visibility !== 'hidden')
     for (const [key, value] of repos) {
-      const entry = DOM.new('a', { className: 'entry', href: `${key}/` })
+      const entry = DOM.new('a', { className: 'entry', href: source.href(`${key}/`) })
       entry.dataset.category = value.category
       const inner = DOM.new('span')
       const head = DOM.new('span', { className: 'head' })
@@ -107,12 +108,12 @@ class Landing {
       .filter(([, value]) => labels.every(label => value.label.includes(label)))
   }
   card (key, value) {
-    const entry = DOM.new('a', { className: 'entry', href: `${value.docname}.html` })
+    const entry = DOM.new('a', { className: 'entry', href: source.href(`${value.docname}.html`) })
     const inner = DOM.new('span')
     const image_container = DOM.new('div', { className: 'img-container' })
     if (value.image) {
       image_container.append(DOM.new('img', {
-        src: value.image,
+        src: source.href(value.image),
         loading: 'lazy',
         alt: '',
       }))
@@ -178,11 +179,12 @@ class Landing {
 }
 
 const LandingPage = () => {
-  let landing, hero
+  let landing, hero, banner
   let active = false
   const init = () => {
     landing = new Landing(app)
     hero = new Hero(app)
+    banner = new EventBanner()
   }
   window.addEventListener('app:hot_reload:doc_unload', () => {
     active = false
@@ -196,7 +198,8 @@ const LandingPage = () => {
       return
     landing.deinit()
     hero.deinit()
-    landing = hero = undefined
+    banner.deinit()
+    landing = hero = banner = undefined
   })
   window.addEventListener('app:hot_reload:page_loaded', () => {
     if (active)
