@@ -116,11 +116,26 @@ html.adi-arcade-open {
 }
 
 .adi-arcade-games {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(15rem, 19rem));
+  --columns: 3;
+  --gap: 1rem;
+  display: flex;
+  flex-wrap: wrap;
   justify-content: center;
-  gap: 1rem;
-  width: min(100%, 80rem);
+  gap: var(--gap);
+  width: min(100%, 60rem);
+
+  // Wraps by --columns, centering a short last row.
+  > .adi-arcade-game {
+    flex: 0 1 calc((100% - (var(--columns) - 1) * var(--gap)) / var(--columns));
+    min-width: 0;
+  }
+}
+
+@media (max-width: 960px) {
+  .adi-arcade-games {
+    --columns: 2;
+    width: min(100%, 40rem);
+  }
 }
 
 // Each card takes its accent from the game (--game-color, an ADI hue).
@@ -219,8 +234,9 @@ html.adi-arcade-open {
   }
 
   .adi-arcade-games {
-    grid-template-columns: minmax(0, 24rem);
-    gap: .6rem;
+    --columns: 1;
+    --gap: .6rem;
+    width: min(100%, 24rem);
   }
 
   .adi-arcade-game {
@@ -255,8 +271,8 @@ html.adi-arcade-open {
 // Short and wide (phones in landscape): keep the cards side by side.
 @media (max-height: 560px) and (min-width: 641px) {
   .adi-arcade-games {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    width: min(100%, 48rem);
+    --columns: 3;
+    width: min(100%, 60rem);
   }
 }
 

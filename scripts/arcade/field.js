@@ -48,15 +48,53 @@ export const ambient = (u, v, time) => {
 const cool = ["#627eea", "#6e8ef2", "#64a9ee", "#62c5dd", "#8bd7cf", "#c1b4ef"]
 const warm = ["#f2994a", "#f47b5a", "#ef5d6b", "#ff8f70", "#ffc36b"]
 
+// Depth ratio between rows of a perspective plane (see Field.draw_plane):
+// a row's height on screen matches a column's width there.
+export const plane_step = ({ horizon, near_y, unit, cell, z_near = 1 }) =>
+  cell * unit / ((near_y - horizon) * z_near)
+
+// Shades one sample: sets the fill for out and returns its crest (0..1),
+// which sizes the square. White wins over warm, warm over color, color over
+// the cool palette.
+const shade = (ctx, out) => {
+  const heat = clamp(out.heat)
+  const light = clamp(out.light)
+  const level = clamp(Math.max(out.level, heat, light))
+  const crest = Math.pow(level, 1.5)
+
+  if (light > 0.12 && light >= heat) {
+    ctx.globalAlpha = mix(0.3, 1, light)
+    ctx.fillStyle = '#ffffff'
+  } else if (heat > 0.12) {
+    ctx.globalAlpha = mix(0.25, 0.95, heat)
+    ctx.fillStyle = warm[Math.min(warm.length - 1, Math.floor(heat * warm.length))]
+  } else if (out.color) {
+    ctx.globalAlpha = mix(0.3, 1, crest)
+    ctx.fillStyle = out.color
+  } else {
+    ctx.globalAlpha = mix(0.06, 0.6, crest)
+    ctx.fillStyle = cool[Math.min(cool.length - 1, Math.floor(level * cool.length))]
+  }
+  return crest
+}
+
 export class Field {
   constructor () {
     // Reused for every cell to avoid allocating per sample.
     this.sample = { level: 0, heat: 0, light: 0, color: null }
   }
 
+  reset_sample () {
+    const out = this.sample
+    out.level = 0
+    out.heat = 0
+    out.light = 0
+    out.color = null
+    return out
+  }
+
   // sampler(center_x, center_y, column, row, out) writes out.level,
   // out.heat, out.light and out.color; a negative level skips the cell.
-  // White wins over warm, warm over color, color over the cool palette.
   //
   // By default the grid is centered on the screen. Pass `cell`/`gap` to size
   // it, and `anchor_x`/`anchor_y` to put a cell corner on a given point, so a
@@ -79,7 +117,6 @@ export class Field {
     }
     const max_size = cell - gap
     const min_size = Math.max(1, cell * 0.14)
-    const out = this.sample
 
     for (let row = 0; row < rows; row++) {
       const center_y = offset_y + (row + 0.5) * cell
@@ -87,34 +124,62 @@ export class Field {
       for (let column = 0; column < columns; column++) {
         const center_x = offset_x + (column + 0.5) * cell
 
-        out.level = 0
-        out.heat = 0
-        out.light = 0
-        out.color = null
+        const out = this.reset_sample()
         sampler(center_x, center_y, column, row, out)
         if (out.level < 0) continue
 
-        const heat = clamp(out.heat)
-        const light = clamp(out.light)
-        const level = clamp(Math.max(out.level, heat, light))
-        const crest = Math.pow(level, 1.5)
-        const size = mix(min_size, max_size, crest)
-        const half = size * 0.5
+        const size = mix(min_size, max_size, shade(ctx, out))
+        ctx.fillRect(center_x - size * 0.5, center_y - size * 0.5, size, size)
+      }
+    }
 
-        if (light > 0.12 && light >= heat) {
-          ctx.globalAlpha = mix(0.3, 1, light)
-          ctx.fillStyle = '#ffffff'
-        } else if (heat > 0.12) {
-          ctx.globalAlpha = mix(0.25, 0.95, heat)
-          ctx.fillStyle = warm[Math.min(warm.length - 1, Math.floor(heat * warm.length))]
-        } else if (out.color) {
-          ctx.globalAlpha = mix(0.3, 1, crest)
-          ctx.fillStyle = out.color
-        } else {
-          ctx.globalAlpha = mix(0.06, 0.6, crest)
-          ctx.fillStyle = cool[Math.min(cool.length - 1, Math.floor(level * cool.length))]
-        }
-        ctx.fillRect(center_x - half, center_y - half, size, size)
+    ctx.globalAlpha = 1
+  }
+
+  // The same field laid on a ground plane seen in perspective, receding to a
+  // horizon. The sampler works in plane coordinates instead of pixels:
+  // sampler(u, z, column, row, out), u across (0 straight ahead) and z the
+  // depth, both in plane units. Columns are `cell` units apart, centered on
+  // u = u_start + column * cell. Rows step in depth by a constant ratio
+  // (plane_step), from z_near to z_far, so every cell looks square on screen.
+  //
+  // Projection: depth z_near lands on `near_y`, `horizon` is infinitely far,
+  // and one unit across at depth 1 is `unit` pixels.
+  draw_plane (ctx, width, height, sampler, {
+    horizon,
+    near_y,
+    unit,
+    cell,
+    u_start,
+    columns,
+    z_near = 1,
+    z_far = 14,
+    gap = 0.2,
+  }) {
+    const center = width / 2
+    const step = plane_step({ horizon, near_y, unit, cell, z_near })
+    const rows = Math.floor(Math.log(z_far / z_near) / Math.log(1 + step)) + 1
+
+    // Far to near, so nearer squares are painted over farther ones.
+    for (let row = rows - 1; row >= 0; row--) {
+      const z = z_near * Math.pow(1 + step, row)
+      const y = horizon + (near_y - horizon) * z_near / z
+      if (y > height + cell * unit) continue
+      const size_px = cell * unit / z
+      const max_size = size_px * (1 - gap)
+      const min_size = Math.max(1, size_px * 0.14)
+
+      for (let column = 0; column < columns; column++) {
+        const u = u_start + column * cell
+        const x = center + u * unit / z
+        if (x < -size_px || x > width + size_px) continue
+
+        const out = this.reset_sample()
+        sampler(u, z, column, row, out)
+        if (out.level < 0) continue
+
+        const size = mix(min_size, max_size, shade(ctx, out))
+        ctx.fillRect(x - size * 0.5, y - size * 0.5, size, size)
       }
     }
 
