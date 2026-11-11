@@ -55,7 +55,7 @@ export const plane_step = ({ horizon, near_y, unit, cell, z_near = 1 }) =>
 
 // Shades one sample: sets the fill for out and returns its crest (0..1),
 // which sizes the square. White wins over warm, warm over color, color over
-// the cool palette.
+// the cool palette; out.alpha (1 by default) fades the whole square.
 const shade = (ctx, out) => {
   const heat = clamp(out.heat)
   const light = clamp(out.light)
@@ -75,13 +75,14 @@ const shade = (ctx, out) => {
     ctx.globalAlpha = mix(0.06, 0.6, crest)
     ctx.fillStyle = cool[Math.min(cool.length - 1, Math.floor(level * cool.length))]
   }
+  ctx.globalAlpha *= clamp(out.alpha)
   return crest
 }
 
 export class Field {
   constructor () {
     // Reused for every cell to avoid allocating per sample.
-    this.sample = { level: 0, heat: 0, light: 0, color: null }
+    this.sample = { level: 0, heat: 0, light: 0, color: null, alpha: 1 }
   }
 
   reset_sample () {
@@ -90,11 +91,13 @@ export class Field {
     out.heat = 0
     out.light = 0
     out.color = null
+    out.alpha = 1
     return out
   }
 
   // sampler(center_x, center_y, column, row, out) writes out.level,
-  // out.heat, out.light and out.color; a negative level skips the cell.
+  // out.heat, out.light, out.color and out.alpha; a negative level skips the
+  // cell.
   //
   // By default the grid is centered on the screen. Pass `cell`/`gap` to size
   // it, and `anchor_x`/`anchor_y` to put a cell corner on a given point, so a

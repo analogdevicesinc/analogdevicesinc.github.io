@@ -12,7 +12,10 @@ import { text, wrap, hud, hud_bottom } from '../ui.js'
 // - Five lives, one lost per missed note and none won back. A stray tap only
 //   breaks the streak. Hit streaks multiply points up to x4, and the lane
 //   rails glow with it.
-// - Hits and the beat send ripples across the floor.
+// - Hits and the beat send ripples across the floor. The streak builds the
+//   show: every 6 hits the multiplier steps up with a flash, brighter each
+//   step, the road turns into a rainbow wave (full at x4), and the chip adds
+//   hi-hats and an octave. Losing the streak fades it all back.
 // - Songs play on and on, each a little faster with notes arriving sooner,
 //   along an ease-in-out difficulty curve that levels off.
 
@@ -25,11 +28,16 @@ const z_hit = 1.5
 const z_far = 14
 // Note length and hit line, in rows of the plane.
 const note_rows = 3
-const great_window = 0.06
-const good_window = 0.13
+// Hit timing windows in seconds, either side of the line: generous, for
+// people playing once, and a little tighter along the difficulty curve.
+const great_window = [0.14, 0.08]
+const good_window = [0.34, 0.2]
 const ramp_seconds = 150
 const tier_seconds = 15
 const max_lives = 5
+const streak_step = 6
+// Rainbow, as fills for the field cells.
+const rainbow = Array.from({ length: 36 }, (_, i) => `hsl(${i * 10}, 85%, 65%)`)
 const best_key = 'best'
 
 // ADI hues, one per lane.
@@ -108,17 +116,22 @@ class Chip {
     const imag = new Float32Array(harmonics)
     for (let k = 1; k < harmonics; k++) real[k] = 2 / (k * Math.PI) * Math.sin(k * Math.PI * 0.25)
     this.pulse = this.ctx.createPeriodicWave(real, imag)
+
+    // A short burst of white noise, for hi-hats.
+    const length = Math.round(this.ctx.sampleRate * 0.05)
+    this.noise = this.ctx.createBuffer(1, length, this.ctx.sampleRate)
+    const data = this.noise.getChannelData(0)
+    for (let i = 0; i < length; i++) data[i] = Math.random() * 2 - 1
   }
 
   resume () {
     if (this.ctx?.state === 'suspended') this.ctx.resume().catch(() => {})
   }
 
-  play (freq, duration, { delay = 0, bass = false } = {}) {
+  play (freq, duration, { delay = 0, bass = false, volume = bass ? 0.55 : 0.32 } = {}) {
     if (!this.ctx) return
     const start = this.ctx.currentTime + delay
     const end = start + duration
-    const volume = bass ? 0.55 : 0.32
 
     const osc = this.ctx.createOscillator()
     if (bass) osc.type = 'triangle'
@@ -134,6 +147,22 @@ class Chip {
     osc.connect(gain).connect(this.master)
     osc.start(start)
     osc.stop(end + 0.02)
+  }
+
+  hat (delay = 0) {
+    if (!this.ctx) return
+    const start = this.ctx.currentTime + delay
+    const source = this.ctx.createBufferSource()
+    source.buffer = this.noise
+    const filter = this.ctx.createBiquadFilter()
+    filter.type = 'highpass'
+    filter.frequency.value = 7000
+    const gain = this.ctx.createGain()
+    gain.gain.setValueAtTime(0.35, start)
+    gain.gain.exponentialRampToValueAtTime(0.001, start + 0.05)
+    source.connect(filter).connect(gain).connect(this.master)
+    source.start(start)
+    source.stop(start + 0.06)
   }
 
   close () {
@@ -157,8 +186,10 @@ class Sequencer {
   get tier () { return 1 + Math.floor(this.elapsed / tier_seconds) }
   get ramp () { return difficulty(this.elapsed, ramp_seconds) }
   // Seconds a note takes from the horizon to the hit line.
-  get lead () { return mix(3, 1.5, this.ramp) }
-  get multiplier () { return Math.min(4, 1 + Math.floor(this.streak / 8)) }
+  get lead () { return mix(3.2, 1.6, this.ramp) }
+  get great () { return mix(great_window[0], great_window[1], this.ramp) }
+  get good () { return mix(good_window[0], good_window[1], this.ramp) }
+  get multiplier () { return Math.min(4, 1 + Math.floor(this.streak / streak_step)) }
 
   reset () {
     this.score = 0
@@ -177,6 +208,8 @@ class Sequencer {
     this.hits = new Array(lanes).fill(-Infinity)
     this.misses = new Array(lanes).fill(-Infinity)
     this.flash = 0
+    this.energy = 0
+    this.shake = 0
     this.best_beaten = false
   }
 
@@ -194,7 +227,7 @@ class Sequencer {
   // Lays a song out from `start` (when its first note crosses the line),
   // faster along the difficulty curve, and returns when it ends.
   queue (song, start) {
-    const beat = 60 / (song.bpm * mix(0.75, 1.35, this.ramp))
+    const beat = 60 / (song.bpm * mix(0.7, 1.3, this.ramp))
     const lead = this.lead
     const parsed = song.notes.split(' ').map(entry => {
       const [pitch, beats] = entry.split(':')
@@ -247,7 +280,7 @@ class Sequencer {
   press (lane) {
     this.pressed[lane] = this.time
     let best = null
-    let best_error = good_window
+    let best_error = this.good
     for (const note of this.notes) {
       if (note.lane !== lane || note.hit || note.missed) continue
       const error = Math.abs(note.t - this.clock)
@@ -265,9 +298,18 @@ class Sequencer {
 
     best.hit = true
     this.hits[lane] = this.time
-    this.chip?.play(best.freq, Math.max(0.08, best.duration * 0.92))
+    const duration = Math.max(0.08, best.duration * 0.92)
+    const before = this.multiplier
+    this.chip?.play(best.freq, duration)
     this.streak += 1
-    const great = best_error < great_window
+    // At x4 an octave above doubles the melody.
+    if (this.multiplier >= 4) this.chip?.play(best.freq * 2, duration, { volume: 0.12 })
+    // Stepping up the multiplier flashes across the plane, brighter each step.
+    if (this.multiplier > before) {
+      const strength = [0, 0, 0.3, 0.6, 0.9][this.multiplier]
+      this.ripples.push({ u: 0, z: z_hit, age: 0, life: 1.6, speed: 9, strength, light: true })
+    }
+    const great = best_error < this.great
     this.score += 10 * this.tier * this.multiplier * (great ? 2 : 1)
     this.ripples.push({ u: lane - lanes / 2 + 0.5, z: z_hit, age: 0, life: 1, speed: 4, strength: great ? 0.7 : 0.5 })
   }
@@ -289,6 +331,10 @@ class Sequencer {
     this.time += dt
     this.state_time += dt
     this.flash = Math.max(0, this.flash - dt * 3)
+    // The show follows the multiplier, easing in and out.
+    const target = this.state === 'playing' ? (this.multiplier - 1) / 3 : 0
+    this.energy += (target - this.energy) * Math.min(1, dt * 2.5)
+    this.shake = Math.max(0, this.shake - dt * 2.4)
     this.travel += dt * (z_far - z_hit) / this.lead * (this.state === 'playing' ? 1 : 0.4)
 
     if (this.state !== 'playing') return
@@ -307,15 +353,23 @@ class Sequencer {
       const beat = this.bass.shift()
       const delay = Math.max(0, beat.t - this.clock)
       this.chip?.play(beat.freq, beat.duration, { delay, bass: true })
+      // Hi-hats join in with the streak: on the beat at x2, off it too at x3.
+      const multiplier = this.multiplier
+      if (multiplier >= 2) this.chip?.hat(delay)
+      if (multiplier >= 3) this.chip?.hat(delay + beat.duration / 1.6)
       this.ripples.push({ u: 0, z: z_hit, age: -delay, life: 1.4, speed: 6, strength: 0.22 })
     }
 
     for (const note of this.notes) {
-      if (note.hit || note.missed || this.clock - note.t <= good_window) continue
+      if (note.hit || note.missed || this.clock - note.t <= this.good) continue
       note.missed = true
       this.misses[note.lane] = this.time
       this.streak = 0
+      // The same red burst as the other games: a hot ring off the line and a
+      // shake.
       this.flash = 1
+      this.shake = this.stage.reduced_motion() ? 0 : 0.45
+      this.ripples.push({ u: note.lane - lanes / 2 + 0.5, z: z_hit, age: 0, life: 0.9, speed: 5, strength: 0.9, hot: true })
       this.lives -= 1
       if (this.lives <= 0) {
         this.game_over()
@@ -326,8 +380,9 @@ class Sequencer {
     for (const ripple of this.ripples) ripple.age += dt
     this.ripples = this.ripples.filter(ripple => ripple.age < ripple.life)
 
-    // Drop notes once they are past the bottom of the screen.
-    this.notes = this.notes.filter(note => this.depth(note) > z_near - 0.5)
+    // Drop notes once they are past the bottom of the screen, but only once
+    // they are resolved: the hit window can outlast the trip off screen.
+    this.notes = this.notes.filter(note => (!note.hit && !note.missed) || this.depth(note) > z_near - 0.5)
   }
 
   depth (note) {
@@ -337,7 +392,12 @@ class Sequencer {
   // -- Rendering ------------------------------------------------------------
 
   render (ctx) {
+    ctx.save()
+    if (this.shake > 0) {
+      ctx.translate((Math.random() - 0.5) * 12 * this.shake, (Math.random() - 0.5) * 12 * this.shake)
+    }
     this.draw_field(ctx)
+    ctx.restore()
     this.draw_hud(ctx)
     if (this.state !== 'playing') this.draw_screen(ctx, this.stage.width, this.stage.height)
   }
@@ -365,9 +425,13 @@ class Sequencer {
     const hits = this.hits.map(t => clamp(1 - (time - t) / 0.3))
     const misses = this.misses.map(t => clamp(1 - (time - t) / 0.4))
     const ripples = this.ripples
+    const energy = this.energy
+    const white_notes = energy > 0.9
 
     this.stage.field.draw_plane(ctx, width, height, (u, z, column, row, out) => {
       const fog = mix(0.35, 1, clamp(1 - (z - z_near) / (z_far - z_near)))
+      // Fades out completely toward the horizon, from a third of the way.
+      const fade = 1 - clamp((z - z_far * 0.33) / (z_far * 0.67))
       const road = u > -2.01 && u < 2.01
       const edge = road && column % per_lane === 0
       const lane = Math.min(lanes - 1, Math.floor(u + 2))
@@ -375,18 +439,30 @@ class Sequencer {
       const wave = ambient(u * 0.35, (z + travel) * 0.35, time * 0.5)
       // The road is a lit floor; around it the field fades out.
       let level = road ? 0.16 + wave * 0.45 : wave * 0.24
-
-      // Ripples: rings spreading over the plane from hits and beats.
-      for (let k = 0; k < ripples.length; k++) {
-        const ripple = ripples[k]
-        if (ripple.age < 0) continue
-        const front = Math.hypot(u - ripple.u, z - ripple.z) - ripple.age * ripple.speed
-        if (front > 0.6 || front < -0.6) continue
-        level += Math.exp(-Math.abs(front) / 0.16) * (1 - ripple.age / ripple.life) * ripple.strength
-      }
       let heat = 0
       let light = 0
       let color = null
+
+      // Ripples: rings spreading over the plane from hits and beats, and hot
+      // ones from misses.
+      for (let k = 0; k < ripples.length; k++) {
+        const ripple = ripples[k]
+        if (ripple.age < 0 || (ripple.light && !road)) continue
+        const front = Math.hypot(u - ripple.u, z - ripple.z) - ripple.age * ripple.speed
+        if (front > 0.6 || front < -0.6) continue
+        const strength = Math.exp(-Math.abs(front) / 0.16) * (1 - ripple.age / ripple.life) * ripple.strength
+        if (ripple.hot) heat += strength
+        else if (ripple.light) light += strength
+        else level += strength
+      }
+
+      // The streak turns the road into a rainbow, banded along the screen's
+      // vertical (depth) and swaying across: first on the crests, then all.
+      if (road && energy > 0.02 && wave > 1 - energy * 1.1) {
+        const band = Math.log(z) * 2.2 + Math.sin(u * 1.1 + time * 2) * 0.35 - time * 0.6
+        color = rainbow[Math.floor((band - Math.floor(band)) * rainbow.length)]
+        level = Math.max(level, 0.28 + 0.3 * energy * wave)
+      }
 
       if (edge) {
         level = Math.max(level, rail)
@@ -395,8 +471,8 @@ class Sequencer {
         if (Math.abs(z / z_hit - 1) < line_half) {
           level = Math.max(level, 0.7)
           color = lane_colors[lane]
-          light = pressed[lane] * 0.8
-          heat = misses[lane] * 0.9
+          light = Math.max(light, pressed[lane] * 0.8)
+          heat = Math.max(heat, misses[lane] * 0.9)
         }
         // A hit flares up the lane around the line.
         const above = z / z_hit - 1
@@ -412,6 +488,8 @@ class Sequencer {
           } else {
             level = 0.95
             color = lane_colors[lane]
+            // Over the full rainbow, notes go white to stand out.
+            if (white_notes) light = Math.max(light, 0.85)
           }
         }
       }
@@ -421,6 +499,7 @@ class Sequencer {
       out.heat = heat
       out.light = light
       out.color = color
+      out.alpha = fade * fade * (3 - 2 * fade)
     }, layout)
   }
 
