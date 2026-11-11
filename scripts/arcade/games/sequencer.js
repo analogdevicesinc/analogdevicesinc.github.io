@@ -51,18 +51,20 @@ const colors = {
   gold: '#ffc36b',
 }
 
+// Average seconds between notes at full speed; every song's tempo is set
+// from it, so all songs are equally dense whatever their rhythm.
+const note_spacing = 0.5
+
 // Public domain melodies: pitch[:beats], a quarter note being one beat.
 const songs = [
   {
     name: 'Ode to Joy',
-    bpm: 120,
     bass: ['C3', 'G2'],
     notes: 'E4 E4 F4 G4 G4 F4 E4 D4 C4 C4 D4 E4 E4:1.5 D4:0.5 D4:2 ' +
       'E4 E4 F4 G4 G4 F4 E4 D4 C4 C4 D4 E4 D4:1.5 C4:0.5 C4:2',
   },
   {
     name: 'Twinkle, Twinkle',
-    bpm: 112,
     bass: ['C3', 'G2'],
     notes: 'C4 C4 G4 G4 A4 A4 G4:2 F4 F4 E4 E4 D4 D4 C4:2 ' +
       'G4 G4 F4 F4 E4 E4 D4:2 G4 G4 F4 F4 E4 E4 D4:2 ' +
@@ -70,7 +72,6 @@ const songs = [
   },
   {
     name: 'Frère Jacques',
-    bpm: 120,
     bass: ['C3', 'G2'],
     notes: 'C4 D4 E4 C4 C4 D4 E4 C4 E4 F4 G4:2 E4 F4 G4:2 ' +
       'G4:0.5 A4:0.5 G4:0.5 F4:0.5 E4 C4 G4:0.5 A4:0.5 G4:0.5 F4:0.5 E4 C4 ' +
@@ -78,12 +79,27 @@ const songs = [
   },
   {
     name: 'Korobeiniki',
-    bpm: 132,
     bass: ['A2', 'E3'],
     notes: 'E5 B4:0.5 C5:0.5 D5 C5:0.5 B4:0.5 A4 A4:0.5 C5:0.5 E5 D5:0.5 C5:0.5 ' +
       'B4:1.5 C5:0.5 D5 E5 C5 A4 A4:2 ' +
       'D5:1.5 F5:0.5 A5 G5:0.5 F5:0.5 E5:1.5 C5:0.5 E5 D5:0.5 C5:0.5 ' +
       'B4 B4:0.5 C5:0.5 D5 E5 C5 A4 A4:2',
+  },
+  {
+    name: 'Für Elise',
+    bass: ['A2', 'E3'],
+    notes: 'E5:0.5 D#5:0.5 E5:0.5 D#5:0.5 E5:0.5 B4:0.5 D5:0.5 C5:0.5 A4:1.5 ' +
+      'C4:0.5 E4:0.5 A4:0.5 B4:1.5 E4:0.5 G#4:0.5 B4:0.5 C5:1.5 ' +
+      'E4:0.5 E5:0.5 D#5:0.5 E5:0.5 D#5:0.5 E5:0.5 B4:0.5 D5:0.5 C5:0.5 A4:1.5 ' +
+      'C4:0.5 E4:0.5 A4:0.5 B4:1.5 E4:0.5 C5:0.5 B4:0.5 A4:2',
+  },
+  {
+    name: 'In the Hall of the Mountain King',
+    bass: ['B2', 'F#3'],
+    notes: 'B3:0.5 C#4:0.5 D4:0.5 E4:0.5 F#4:0.5 D4:0.5 F#4 F4:0.5 C#4:0.5 F4 E4:0.5 C4:0.5 E4 ' +
+      'B3:0.5 C#4:0.5 D4:0.5 E4:0.5 F#4:0.5 D4:0.5 F#4:0.5 B4:0.5 A4:0.5 F#4:0.5 D4:0.5 F#4:0.5 A4:2 ' +
+      'B3:0.5 C#4:0.5 D4:0.5 E4:0.5 F#4:0.5 D4:0.5 F#4 F4:0.5 C#4:0.5 F4 E4:0.5 C4:0.5 E4 ' +
+      'B3:0.5 C#4:0.5 D4:0.5 E4:0.5 F#4:0.5 D4:0.5 F#4:0.5 B4:0.5 A4:0.5 F#4:0.5 D4:0.5 F#4:0.5 B4:2',
   },
 ]
 
@@ -186,7 +202,7 @@ class Sequencer {
   get tier () { return 1 + Math.floor(this.elapsed / tier_seconds) }
   get ramp () { return difficulty(this.elapsed, ramp_seconds) }
   // Seconds a note takes from the horizon to the hit line.
-  get lead () { return mix(3.2, 1.6, this.ramp) }
+  get lead () { return mix(2.9, 1.6, this.ramp) }
   get great () { return mix(great_window[0], great_window[1], this.ramp) }
   get good () { return mix(good_window[0], good_window[1], this.ramp) }
   get multiplier () { return Math.min(4, 1 + Math.floor(this.streak / streak_step)) }
@@ -227,12 +243,15 @@ class Sequencer {
   // Lays a song out from `start` (when its first note crosses the line),
   // faster along the difficulty curve, and returns when it ends.
   queue (song, start) {
-    const beat = 60 / (song.bpm * mix(0.7, 1.3, this.ramp))
     const lead = this.lead
     const parsed = song.notes.split(' ').map(entry => {
       const [pitch, beats] = entry.split(':')
       return { midi: midi_of(pitch), beats: Number(beats ?? 1) }
     })
+    // One beat lasts so the average gap is note_spacing, sped up along the
+    // difficulty curve.
+    const beats = parsed.reduce((sum, note) => sum + note.beats, 0)
+    const beat = note_spacing * parsed.length / beats / mix(0.8, 1.3, this.ramp)
     const pitches = [...new Set(parsed.map(note => note.midi))].sort((a, b) => a - b)
 
     let t = start
