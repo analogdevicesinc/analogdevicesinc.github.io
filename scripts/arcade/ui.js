@@ -41,8 +41,9 @@ export const wrap = (ctx, font, value, max_width, { size = 14, weight = 600 } = 
 
 // Top bar, level with the arcade toolbar: the score with the lives and the
 // charge beside it (while playing, for games that have them), and one muted
-// line of level, time and best below. If the score grows into the toolbar
-// (narrow phones), the lives and charge move to the end of the second line.
+// line of level, time and best below (or the game's own `status`, red when
+// `alert`). If the score grows into the toolbar (narrow phones), the lives
+// and charge move to the end of the second line.
 // Games keep their board below `hud_bottom`.
 export const hud_bottom = 80
 
@@ -60,6 +61,8 @@ export const hud = (ctx, font, width, {
   hurt = false,
   charge = 0,
   charge_max = 0,
+  status = null,
+  alert = false,
 }) => {
   const x = 24
   const middle = 34
@@ -90,10 +93,11 @@ export const hud = (ctx, font, width, {
     left += 22
   }
 
-  text(ctx, font, `LEVEL ${level}  ·  ${Math.floor(elapsed)}s  ·  BEST ${Math.max(best, score)}`, x, middle + 30, {
+  const line = status ?? `LEVEL ${level}  ·  ${Math.floor(elapsed)}s`
+  text(ctx, font, `${line}  ·  BEST ${Math.max(best, score)}`, x, middle + 30, {
     size: 11,
     weight: 600,
-    color: 'rgba(233, 238, 245, .62)',
+    color: alert ? '#ff6b6b' : 'rgba(233, 238, 245, .62)',
     spacing: '1px',
   })
 }

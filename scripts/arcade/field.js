@@ -148,6 +148,9 @@ export class Field {
   //
   // Projection: depth z_near lands on `near_y`, `horizon` is infinitely far,
   // and one unit across at depth 1 is `unit` pixels.
+  //
+  // `shift(z)`, if given, slides each row across by that many units, so the
+  // columns can follow a curving road; u then includes the shift.
   draw_plane (ctx, width, height, sampler, {
     horizon,
     near_y,
@@ -158,6 +161,7 @@ export class Field {
     z_near = 1,
     z_far = 14,
     gap = 0.2,
+    shift = null,
   }) {
     const center = width / 2
     const step = plane_step({ horizon, near_y, unit, cell, z_near })
@@ -171,9 +175,10 @@ export class Field {
       const size_px = cell * unit / z
       const max_size = size_px * (1 - gap)
       const min_size = Math.max(1, size_px * 0.14)
+      const offset = shift ? shift(z) : 0
 
       for (let column = 0; column < columns; column++) {
-        const u = u_start + column * cell
+        const u = offset + u_start + column * cell
         const x = center + u * unit / z
         if (x < -size_px || x > width + size_px) continue
 

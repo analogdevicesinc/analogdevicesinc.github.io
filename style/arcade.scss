@@ -221,7 +221,7 @@ html.adi-arcade-open {
   }
 }
 
-// Phones: one column of short rows, icon beside the text, so the three games
+// Phones: one column of short rows, icon beside the text, so all the games
 // fit without scrolling.
 @media (max-width: 640px), (max-height: 560px) {
   .adi-arcade-menu {
@@ -265,6 +265,26 @@ html.adi-arcade-open {
 
   .adi-arcade-game-controls {
     font-size: .68rem;
+  }
+}
+
+// Short phones: tighter still.
+@media (max-width: 640px) and (max-height: 720px) {
+  .adi-arcade-menu {
+    gap: 1rem;
+  }
+
+  .adi-arcade-games {
+    --gap: .45rem;
+  }
+
+  .adi-arcade-game {
+    padding: .55rem .9rem;
+  }
+
+  .adi-arcade-game-tagline {
+    font-size: .8rem;
+    line-height: 1.3;
   }
 }
 

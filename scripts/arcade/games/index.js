@@ -10,5 +10,6 @@ import trace_router from './trace-router.js'
 import frequency_hopper from './frequency-hopper.js'
 import accumulator from './accumulator.js'
 import sequencer from './sequencer.js'
+import slew_rate from './slew-rate.js'
 
-export const games = [interference, trace_router, frequency_hopper, accumulator, sequencer]
+export const games = [interference, trace_router, frequency_hopper, accumulator, sequencer, slew_rate]
