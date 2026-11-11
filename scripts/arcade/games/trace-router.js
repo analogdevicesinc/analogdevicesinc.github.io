@@ -20,12 +20,12 @@ const rand = (min, max) => min + Math.random() * (max - min)
 const max_integrity = 5
 const tier_seconds = 15
 // Seconds until the difficulty curve reaches its plateau.
-const ramp_seconds = 180
+const ramp_seconds = 140
 const trace_life = 6
 const trace_fade = 1
 const combo_window = 3
 // Bumped when the rules change, so old scores don't outlive a rebalance.
-const best_key = 'best.v2'
+const best_key = 'best.v3'
 
 const steps = [[1, 0], [-1, 0], [0, 1], [0, -1]]
 // Pair colors stay clear of the warm palette (fuses and noise run hot) and
@@ -192,8 +192,8 @@ class TraceRouter {
 
   spawn_pair () {
     const ramp = this.ramp
-    const dmax = Math.min(this.cols + this.rows - 2, Math.round(mix(6, 20, ramp)))
-    const dmin = Math.min(dmax, Math.round(mix(3, 8, ramp)))
+    const dmax = Math.min(this.cols + this.rows - 2, Math.round(mix(7, 20, ramp)))
+    const dmin = Math.min(dmax, Math.round(mix(4, 8, ramp)))
 
     for (let attempt = 0; attempt < 40; attempt++) {
       const a = Math.floor(Math.random() * this.board.length)
@@ -210,7 +210,7 @@ class TraceRouter {
       if (b === a || !this.free(b) || this.crowded(b) || this.hot(b)) continue
       if (!this.route(a, b)) continue
 
-      const fuse = mix(10, 5, ramp) + distance * 0.3
+      const fuse = mix(8, 4.5, ramp) + distance * 0.3
       const pair = {
         id: this.next_id++,
         color: pair_colors[this.color_index++ % pair_colors.length],
@@ -253,7 +253,7 @@ class TraceRouter {
     }
 
     const length = Math.hypot(x1 - x0, y1 - y0)
-    const speed = mix(50, 120, this.ramp) * this.pace_scale
+    const speed = mix(70, 140, this.ramp) * this.pace_scale
     this.noises.push({
       x: x0,
       y: y0,
@@ -498,14 +498,14 @@ class TraceRouter {
       this.spawn_timer -= dt
       if (this.spawn_timer <= 0) {
         const spawned = this.spawn_pair()
-        this.spawn_timer = spawned ? mix(3, 1, this.ramp) * rand(0.8, 1.2) : 0.4
+        this.spawn_timer = spawned ? mix(2.2, 0.9, this.ramp) * rand(0.8, 1.2) : 0.4
       }
 
-      if (t > 30) {
+      if (t > 20) {
         this.noise_timer -= dt
         if (this.noise_timer <= 0) {
           this.spawn_noise()
-          this.noise_timer = mix(6, 2.8, this.ramp) * rand(0.8, 1.2)
+          this.noise_timer = mix(5, 2.4, this.ramp) * rand(0.8, 1.2)
         }
       }
 

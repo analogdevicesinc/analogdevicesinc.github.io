@@ -25,9 +25,10 @@ const min_split_mass = 36
 const max_cells = 16
 const eat_ratio = 1.25
 const hold_time = 0.28
-const ramp_seconds = 180
+const ramp_seconds = 140
 const tier_seconds = 15
-const best_key = 'best'
+// Bumped when the rules change, so old scores don't outlive a rebalance.
+const best_key = 'best.v2'
 
 const colors = {
   text: '#e9eef5',
@@ -92,7 +93,7 @@ class Accumulator {
     this.best_beaten = false
     this.cam = { x: center, y: center }
     this.scale = this.target_scale()
-    for (let i = 0; i < 10; i++) this.spawn_bot()
+    for (let i = 0; i < 12; i++) this.spawn_bot()
   }
 
   start () {
@@ -229,7 +230,7 @@ class Accumulator {
   spawn_bot () {
     const m = Math.random() < 0.5
       ? rand(8, 40)
-      : Math.max(8, this.mass * rand(0.35, mix(1.4, 2.4, this.ramp)))
+      : Math.max(8, this.mass * rand(0.35, mix(1.6, 2.6, this.ramp)))
     const r = radius_of(m)
     const { width, height } = this.stage
     const half_w = width / 2 / this.scale + r
@@ -311,7 +312,7 @@ class Accumulator {
       this.move_cells(dt)
     }
 
-    const count = Math.round(mix(10, 18, this.ramp))
+    const count = Math.round(mix(12, 20, this.ramp))
     while (this.bots.length < count) this.spawn_bot()
     this.move_bots(dt)
 
@@ -419,7 +420,7 @@ class Accumulator {
   // eagerly), graze on data bits, or wander.
   move_bots (dt) {
     const ramp = this.ramp
-    const pace = mix(0.82, 0.95, ramp)
+    const pace = mix(0.86, 0.97, ramp)
     const ease = Math.min(1, dt * 4)
     const others = [...this.cells, ...this.bots]
 

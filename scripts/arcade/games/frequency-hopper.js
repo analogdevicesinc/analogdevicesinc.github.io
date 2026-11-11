@@ -21,7 +21,8 @@ const rand = (min, max) => min + Math.random() * (max - min)
 
 const tier_seconds = 15
 const max_streak = 5
-const best_key = 'best'
+// Bumped when the rules change, so old scores don't outlive a rebalance.
+const best_key = 'best.v2'
 
 // Vertical motion in spectrum heights (per second, per second squared), so
 // the feel is the same on any screen.
@@ -64,8 +65,8 @@ class FrequencyHopper {
 
   // Scroll speed follows the spectrum height, so hop arcs keep their shape.
   get speed () {
-    const ramp = 1 + clamp(this.elapsed / 180) * 0.6
-    return this.span * 0.26 * ramp
+    const ramp = 1 + clamp(this.elapsed / 150) * 0.6
+    return this.span * 0.31 * ramp
   }
 
   reset () {
@@ -134,7 +135,7 @@ class FrequencyHopper {
     const center = clamp(rand(Math.max(low, this.last_center - reach), Math.min(high, this.last_center + reach)), low, high)
     this.last_center = center
 
-    const hopping = t > 30 && Math.random() < clamp((t - 30) / 90, 0, 0.5)
+    const hopping = t > 20 && Math.random() < clamp((t - 20) / 80, 0, 0.5)
     const amplitude = hopping ? Math.min(rand(0.06, 0.14), center - low, high - center) : 0
 
     const column = {
@@ -226,7 +227,7 @@ class FrequencyHopper {
       this.spawn_timer -= dt
       if (this.spawn_timer <= 0) {
         this.spawn_column()
-        this.spawn_timer = Math.max(1.1, 1.75 - t * 0.006) * rand(0.9, 1.1)
+        this.spawn_timer = Math.max(0.95, 1.5 - t * 0.006) * rand(0.9, 1.1)
       }
     }
 

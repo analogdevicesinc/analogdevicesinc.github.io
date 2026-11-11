@@ -19,16 +19,16 @@ const rand = (min, max) => min + Math.random() * (max - min)
 const max_charge = 3
 // Seconds per charge, from the start to the difficulty plateau: recharge
 // speeds up with the noise, so fast hands keep up.
-const recharge_easy = 0.9
-const recharge_hard = 0.4
+const recharge_easy = 0.75
+const recharge_hard = 0.35
 const max_integrity = 5
 const tier_seconds = 15
 // Seconds until the difficulty curve reaches its plateau.
-const ramp_seconds = 150
-const wave_speed = 420
+const ramp_seconds = 120
+const wave_speed = 500
 const wave_reach = 200
 // Bumped when the rules change, so old scores don't outlive a rebalance.
-const best_key = 'best.v3'
+const best_key = 'best.v4'
 
 const kinds = {
   hum:    { speed: 1,   radius: 24, hp: 1, value: 10 },
@@ -157,7 +157,7 @@ class Interference {
     const kind = this.pick_kind()
     const spec = kinds[kind]
     const radius = spec.radius * this.scale
-    const pace = mix(75, 220, this.ramp)
+    const pace = mix(110, 250, this.ramp)
 
     this.noises.push({
       kind,
@@ -236,8 +236,8 @@ class Interference {
       if (this.spawn_timer <= 0) {
         const ramp = this.ramp
         this.spawn()
-        if (Math.random() < mix(0, 0.45, ramp)) this.spawn()
-        this.spawn_timer = mix(1.1, 0.42, ramp) * rand(0.7, 1.2)
+        if (Math.random() < mix(0.05, 0.5, ramp)) this.spawn()
+        this.spawn_timer = mix(0.85, 0.36, ramp) * rand(0.7, 1.2)
       }
     }
 
