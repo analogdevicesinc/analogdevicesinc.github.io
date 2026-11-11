@@ -13,15 +13,16 @@ import { text, wrap, hud, hud_bottom } from '../ui.js'
 //   or behind, swaying so places swap back and forth. Driving clean keeps you
 //   clear of the cut; a crash drops you places, and the rivals only wait a
 //   little, so a crash right before a cut can cost the race.
-// - Blocks slow you down hard. Bumping a rival pushes you both aside.
+// - Blocks slow you down hard. Boost pads throw the car forward on a flame.
+//   Bumping a rival pushes you both aside.
 // - Curves push the car outward. Speed, blocks and cuts follow an
 //   ease-in-out difficulty curve that levels off.
 
 const road = 12
 // Field cells drawn on either side of the rails.
 const margin = 9
-const car_width = 4
-const car_rows = 4
+const car_width = 3
+const car_rows = 3
 const block_width = 3
 const block_rows = 3
 const pad_width = 5
@@ -37,6 +38,8 @@ const cut_count = 2
 const slot = 0.9
 const ramp_seconds = 180
 const steer_speed = 21
+// How far up the screen (in depth) a boost surges the car.
+const surge_depth = 0.35
 const best_key = 'best'
 
 // Rivals, in ADI hues; warm colors are for the blocks.
@@ -96,13 +99,24 @@ class SlewRate {
     this.flash = 0
     this.shake = 0
     this.party = 0
+    this.boosted_at = -Infinity
+    this.cut_at = -Infinity
+    this.cut_survived = true
+    // Cars cut from the race, burning out where they stopped.
+    this.wrecks = []
+    // The warning while you are in the cut zone, 0..1, and its pulse.
+    this.danger = 0
+    this.danger_phase = 0
     this.best_beaten = false
     this.target = null
 
-    // The starting grid, three by three, you in the middle.
+    // The starting grid, three by three and tight, so the whole pack is in
+    // view: you in the middle of the back row, with the cars meant to be
+    // behind you there to overtake straight away.
+    const gap = car_rows * plane_step(this.layout()) * z_player * 2.2
     let k = 0
-    for (const d of [0.7, 0, -0.7]) {
-      for (const x of [-7, 0, 7]) {
+    for (const d of [gap * 2, gap, 0]) {
+      for (const x of [-6, 0, 6]) {
         if (d === 0 && x === 0) continue
         this.cars.push(this.rival(x, d, car_colors[k++ % car_colors.length]))
       }
@@ -192,8 +206,21 @@ class SlewRate {
   // Screen x to a position across the road, where the car would sit under it.
   to_track (px) {
     const { unit } = this.layout()
-    const u = (px - this.stage.width / 2) * z_player / unit
+    const u = (px - this.stage.width / 2) * (z_player + this.surge * surge_depth) / unit
     return clamp(u / (1 - follow), -road, road)
+  }
+
+  // How far a boost has thrown the car up the screen, 0..1: out fast and
+  // easing off, a moment held, then easing in and out back down.
+  get surge () {
+    const t = this.time - this.boosted_at
+    if (t < 0.3) return 1 - Math.pow(1 - t / 0.3, 3)
+    if (t < 0.8) return 1
+    if (t < 1.6) {
+      const back = (t - 0.8) / 0.8
+      return 1 - back * back * (3 - 2 * back)
+    }
+    return 0
   }
 
   // -- Simulation -----------------------------------------------------------
@@ -230,6 +257,20 @@ class SlewRate {
       this.cut_timer -= dt
       if (this.cut_timer <= 0) this.cut()
     }
+    this.warn(dt)
+  }
+
+  // In the cut zone over the last seconds before a cut, the road glows hot:
+  // faint at first, stronger and pulsing faster as the cut nears. Getting
+  // clear eases it back out.
+  warn (dt) {
+    const urgency = clamp(1 - this.cut_timer / 3)
+    const zone = this.state === 'playing' && this.next_race === null && this.cut_timer < 3 &&
+      this.rank > this.active.length - this.cut_size
+    const target = zone ? 0.32 + 0.68 * urgency * urgency : 0
+    const rate = target > this.danger ? 8 : 2.5
+    this.danger += (target - this.danger) * Math.min(1, dt * rate)
+    this.danger_phase += dt * mix(6, 18, urgency)
   }
 
   drive_player (dt) {
@@ -326,8 +367,11 @@ class SlewRate {
         car.boost = 1
         if (car.player) {
           car.v = Math.max(car.v, this.top * 1.45)
+          this.boosted_at = this.time
           this.score += 25 * this.race
-          this.ripples.push({ x: car.x, d: car.d, age: 0, life: 0.9, speed: 30, strength: 0.7, light: true })
+          // A white ring, and a ring of fire right behind it.
+          this.ripples.push({ x: car.x, d: car.d, age: 0, life: 0.9, speed: 30, strength: 0.9, light: true })
+          this.ripples.push({ x: car.x, d: car.d, age: -0.12, life: 1, speed: 24, strength: 0.7, hot: true })
         }
         continue
       }
@@ -408,17 +452,20 @@ class SlewRate {
     const rank = this.rank
     const field = this.active.length
     const losers = this.ranked().slice(-this.cut_size)
+    this.cut_at = this.time
     for (const car of losers) {
       car.out = true
-      this.ripples.push({ x: car.x, d: car.d, age: 0, life: 1, speed: 20, strength: 0.8, hot: true })
+      if (!car.player) this.wrecks.push({ x: car.x, d: car.d, at: this.time })
     }
-    if (losers.includes(this.player)) {
+    this.cut_survived = !losers.includes(this.player)
+    if (!this.cut_survived) {
+      // You are out: the whole road flashes hot.
+      if (!this.stage.reduced_motion()) this.shake = Math.max(this.shake, 0.4)
+      this.danger = 0
       this.game_over(rank, field)
       return
     }
     this.score += 100 * this.race
-    // A white sweep down the road: you made it through.
-    this.ripples.push({ x: this.player.x, d: this.player.d, age: 0, life: 1.4, speed: 40, strength: 0.5, light: true })
     this.cars = this.active
     if (this.cars.length === 1) {
       // Last one standing: the road throws a party, then a new pack arrives.
@@ -480,7 +527,8 @@ class SlewRate {
     const log_step = Math.log(1 + step)
     const row_of = z => Math.log(z / z_near) / log_step
     const origin = -road - margin
-    const base = player.d
+    // The camera lags behind a surging car, so it moves up the screen.
+    const base = player.d - this.surge * surge_depth
     const base_center = center(base)
     const base_slope = slope(base)
     const camera = player.x * follow
@@ -497,10 +545,14 @@ class SlewRate {
     const in_danger = warning && this.rank > cut_from
     const party = this.party
     const flicker = Math.floor(time * 16)
+    const since_cut = time - this.cut_at
+    const survived = this.cut_survived
+    const danger = this.danger * (0.6 + 0.4 * Math.sin(this.danger_phase))
 
     // Everything on the road as boxes of rows and columns, back to front so
-    // nearer ones win.
+    // nearer ones win, and the flames behind boosting cars.
     const boxes = []
+    const flames = []
     const add = (x, d, columns, rows, style) => {
       const z = z_player + d - base
       if (z < z_near * 0.8 || z > z_far) return
@@ -519,17 +571,25 @@ class SlewRate {
     for (const car of this.active) {
       const hurt = time - car.hurt < 0.8 && blink
       const bumped = clamp(1 - (time - car.bumped) / 0.25)
+      // A flame out the back while boosting.
+      const burn = car.player ? clamp((car.v / this.top - 1) / 0.45) : car.boost
+      if (burn > 0.02) {
+        const z = z_player + car.d - base
+        const left = Math.round(car.x - car_width / 2) - origin
+        flames.push({ c0: left - 1, c1: left + car_width, back: row_of(z) - car_rows / 2, length: 3 + 9 * burn, burn })
+      }
       if (car.player) {
-        // A white light trail while boosting.
-        if (car.v > this.top * 1.02) {
-          const trail = clamp((car.v / this.top - 1) / 0.45)
-          add(car.x, car.d - this.car_length * 1.1, 2, car_rows, { light: 0.5 * trail })
-        }
         add(car.x, car.d, car_width, car_rows, in_danger && blink ? { heat: 0.85 } : hurt ? { heat: 0.7 } : { light: 0.95 })
       } else {
         const doomed = warning && this.ranked().indexOf(car) >= cut_from && blink
         add(car.x, car.d, car_width, car_rows, doomed || hurt ? { heat: 0.7 } : { color: car.color, level: 0.95, light: bumped * 0.6 })
       }
+    }
+    // Cars just cut burn out where they stopped.
+    this.wrecks = this.wrecks.filter(wreck => time - wreck.at < 1.2)
+    for (const wreck of this.wrecks) {
+      const burn = 1 - (time - wreck.at) / 1.2
+      add(wreck.x, wreck.d, car_width, car_rows, { heat: 0.85 * burn, level: 0.4 * burn })
     }
     boxes.sort((a, b) => b.z - a.z)
     const ripples = this.ripples
@@ -554,7 +614,15 @@ class SlewRate {
         level = 0.65
         if (stripe) light = 0.55
         else color = '#62c5dd'
-        if (in_danger) heat = blink ? 0.8 : 0.3
+      }
+
+      if (on_road || rail) {
+        // The cut zone warning.
+        if (danger > 0.01) heat = Math.max(heat, danger)
+        // Cut yourself: the whole road strobes hot three times.
+        if (since_cut < 1 && !survived) {
+          heat = Math.max(heat, Math.floor(since_cut / 0.16) % 2 === 0 ? mix(0.95, 0.45, since_cut) : 0.15)
+        }
       } else if ((x === -4 || x === 4) && Math.floor(d / 0.5) % 3 === 0) {
         level = Math.max(level, 0.6)
       }
@@ -568,12 +636,28 @@ class SlewRate {
 
       for (let k = 0; k < ripples.length; k++) {
         const ripple = ripples[k]
+        if (ripple.age < 0) continue
         const front = Math.hypot(x - ripple.x, (d - ripple.d) * depth_cells) - ripple.age * ripple.speed
         if (front > 1.5 || front < -1.5) continue
         const strength = Math.exp(-Math.abs(front) / 0.7) * (1 - ripple.age / ripple.life) * ripple.strength
         if (ripple.hot) heat += strength
         else if (ripple.light) light += strength
         else level += strength
+      }
+
+      for (let k = 0; k < flames.length; k++) {
+        const flame = flames[k]
+        if (column < flame.c0 || column > flame.c1 || row >= flame.back) continue
+        // A tongue of fire: a car wide, licking out a cell either side near
+        // the car, flickering in length and heat, white-hot at the car.
+        const edge = column === flame.c0 || column === flame.c1
+        const length = flame.length * (edge ? 0.3 : 1) * (0.75 + 0.5 * hash(column, flicker))
+        const k_back = (flame.back - row) / length
+        if (k_back > 1) continue
+        const burn = Math.sqrt(flame.burn)
+        heat = Math.max(heat, burn * (0.5 + 0.6 * (1 - k_back)) * (0.75 + 0.4 * hash(column * 1.3 + flicker, row * 0.7)))
+        if (k_back < 0.2 && !edge) light = Math.max(light, burn * (1 - k_back * 4))
+        level = Math.max(level, 0.6)
       }
 
       for (let k = 0; k < boxes.length; k++) {
