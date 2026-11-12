@@ -1,8 +1,9 @@
 from docutils.parsers.rst import Directive, directives
 from docutils.parsers.rst.roles import set_classes
 from docutils import nodes
-
 import re
+
+from landing_cards import load_data, repositories_html, collections_html
 
 ARROW = (
     '<svg class="view-all-icon no-background" viewBox="0 0 24 24" width="1.25em" '
@@ -25,7 +26,7 @@ def section_head(section, title, category):
 
 class directive_cards(Directive):
     """
-    Creates the entry-point for dynamic cards.
+    Renders repository cards.
     """
     option_spec = {
         'class': directives.class_option,
@@ -53,6 +54,11 @@ class directive_cards(Directive):
 
         section_head(section, self.arguments[0], self.options.get('category'))
         section += content
+        if 'repositories' in classes_:
+            env = self.state.document.settings.env
+            tabs, cards = repositories_html(load_data(env, 'metadata.json', 'repotoc'))
+            section += nodes.raw('', tabs, format='html')
+            node_cards += nodes.raw('', cards, format='html')
         section += node_cards
 
         return [section]
@@ -60,7 +66,7 @@ class directive_cards(Directive):
 
 class directive_cards_collection(Directive):
     """
-    Creates the entry-point for dynamic collection cards.
+    Renders collection cards and their tab contents.
     """
     option_spec = {
         'class': directives.class_option,
@@ -91,7 +97,11 @@ class directive_cards_collection(Directive):
         node_cards = nodes.container(
             classes=classes_
         )
-        node_cards['ids'].append(",".join(label))
+        env = self.state.document.settings.env
+        tabs_html, cards_html = collections_html(
+            load_data(env, 'collection.json', 'collection'), label, tabs,
+        )
+        node_cards += nodes.raw('', cards_html, format='html')
         if 'view-all' in self.options:
             view_all = nodes.reference(
                 '', '', refuri=self.options['view-all'],
@@ -109,11 +119,8 @@ class directive_cards_collection(Directive):
 
         section_head(section, self.arguments[0], category)
         section += content
-        if tabs:
-            node_tabs = nodes.container(classes=['collection-tabs'])
-            for tab in tabs:
-                node_tabs += nodes.inline(text=tab, classes=['tab'])
-            section += node_tabs
+        if tabs_html:
+            section += nodes.raw('', tabs_html, format='html')
         section += node_cards
 
         return [section]
@@ -143,11 +150,14 @@ class directive_section(Directive):
         return [section]
 
 def builder_inited(app):
+    app.env.landing_data = {}
     if app.builder.format == 'html':
         app.add_js_file("custom.umd.js", priority=500, loading_method="async")
         app.add_css_file("custom.min.css")
 
 def setup(app):
+    app.add_config_value('landing_data_dir', '_data', 'env')
+
     app.add_directive('cards', directive_cards)
     app.add_directive('cards-collection', directive_cards_collection)
     app.add_directive('section', directive_section)

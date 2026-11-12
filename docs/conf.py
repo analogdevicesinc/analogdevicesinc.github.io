@@ -22,7 +22,7 @@ needs_extensions = {
     'adi_doctools': '0.5'
 }
 
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_build', '_data', 'Thumbs.db', '.DS_Store']
 source_suffix = '.rst'
 
 # -- Custom extensions configuration ------------------------------------------

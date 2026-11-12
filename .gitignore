@@ -1,5 +1,6 @@
 __pycache__
 _build
+/docs/_data/
 node_modules
 *.min.css
 *.min.css.map

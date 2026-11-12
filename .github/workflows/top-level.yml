@@ -4,10 +4,13 @@ on:
       - main
       - staging/*
   pull_request:
+  workflow_dispatch:
 
 jobs:
   build-doc:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
     - name: Set up Python
@@ -23,14 +26,23 @@ jobs:
     - uses: actions/checkout@v4
       with:
         ref: gh-pages
-        path: redirects
+        path: published
+        sparse-checkout: |
+          documentation
+          _static
     - name: Install pip packages
       working-directory: docs
       run: |
         pip install pip --upgrade
         pip install -r requirements.txt --upgrade
 
+    - name: Reuse static assets
+      if: github.event_name == 'workflow_dispatch'
+      run: |
+        cp published/_static/{custom,games}.{umd.js,umd.js.map,min.css,min.css.map} docs/sources/
+
     - name: Install bundler dependencies
+      if: github.event_name != 'workflow_dispatch'
       run: >-
         npm install
         rollup
@@ -41,18 +53,28 @@ jobs:
         gsap
 
     - name: Bundle web scripts
+      if: github.event_name != 'workflow_dispatch'
       run: >-
         node_modules/.bin/rollup -c
         scripts/rollup.config.mjs
         --environment DOCTOOLS_PATH:./doctools
 
     - name: Bundle web styles
+      if: github.event_name != 'workflow_dispatch'
       run: >-
         node_modules/.bin/sass
         --load-path ./doctools/adi_doctools/theme/harmonic/style
         style/bundle.scss:docs/sources/custom.min.css
         style/arcade.scss:docs/sources/games.min.css
         --style compressed
+
+    - name: Get metadata
+      run: |
+        mkdir -p docs/_data
+        curl -fsSL --retry 3 https://analogdevicesinc.github.io/doctools/metadata.json \
+          -o docs/_data/metadata.json
+        curl -fsSL --retry 3 https://analogdevicesinc.github.io/system-level/collection.json \
+          -o docs/_data/collection.json
 
     - name: Build doc
       working-directory: docs
@@ -62,13 +84,12 @@ jobs:
     - name: Preserve redirects
       run: |
         mkdir -p docs/_build/dirhtml/documentation
-        cp -a redirects/documentation/. docs/_build/dirhtml/documentation/
+        cp -a published/documentation/. docs/_build/dirhtml/documentation/
 
     - name: Generate sitemap index
       working-directory: docs
       run: |
-        curl -fsSL https://analogdevicesinc.github.io/doctools/metadata.json |
-          jq -r '.repotoc[] | select(.visibility == "public") | .url_doc + "/sitemap.xml"' |
+        jq -r '.repotoc[] | select(.visibility == "public") | .url_doc + "/sitemap.xml"' _data/metadata.json |
           jq -R -s 'split("\n") | map(select(length > 0))' |
           jq -r '"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<sitemapindex xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n" + (map("  <sitemap><loc>\(.)</loc></sitemap>") | join("\n")) + "\n</sitemapindex>"' \
           > _build/dirhtml/sitemap.xml
