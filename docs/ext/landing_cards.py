@@ -132,12 +132,14 @@ def collection_card(name, value, filters, visible):
     description = (f'<hr><div class="description">{escape(value["description"])}</div>'
                    if value.get('description') else '')
     return (
-        f'<a class="entry" href="{href(value["docname"] + ".html")}" '
+        f'<div class="entry" '
         f'data-filters="{escape(json.dumps(filters))}"{"" if visible else " hidden"}>'
         f'<span><div class="img-container">{image}</div>'
         f'<div class="title">{escape(name)}</div>'
         f'<div class="subtitle">{escape(value.get("subtitle") or "")}</div>'
-        f'{description}<span class="spacer"></span></span></a>'
+        f'{description}<span class="spacer"></span>'
+        f'<span class="link-overlay"><a href="{href(value["docname"] + ".html")}" '
+        f'aria-label="Read more about {escape(name)}">Read more</a></span></span></div>'
     )
 
 

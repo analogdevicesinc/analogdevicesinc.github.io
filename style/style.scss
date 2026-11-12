@@ -226,6 +226,28 @@ section:has(> .collection-category) {
 }
 
 .cards.collection {
+    .entry {
+        position: relative;
+    }
+
+    .link-overlay,
+    .link-overlay > a {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        border-radius: variable.$border-radius;
+    }
+
+    .link-overlay > a {
+        font-size: 0;
+        border: none;
+
+        &:focus-visible {
+            outline: 2px solid var(--accent-color);
+            outline-offset: 3px;
+        }
+    }
+
     .img-container {
         position: relative;
         isolation: isolate;
@@ -264,7 +286,7 @@ section:has(> .collection-category) {
         }
     }
     .entry:hover .img-container img,
-    .entry:focus-visible .img-container img {
+    .entry:has(.link-overlay a:focus-visible) .img-container img {
         opacity: 1;
     }
 
