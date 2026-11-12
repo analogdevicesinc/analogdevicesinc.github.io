@@ -7,6 +7,7 @@
 
 .landing-page {
   --gutter: 1rem;
+  --hero-min-height: clamp(18rem, 40vw, 44rem);
 
   @media (min-width: variable.$screen-1) and (max-width: variable.$screen-3) {
     --gutter: calc(5vw + 1rem);
@@ -24,6 +25,7 @@
 .hero {
   position: relative;
   width: 100vw;
+  min-height: calc(var(--hero-min-height) + 1px);
   margin-left: calc(-1 * var(--gutter));
   flex-wrap: nowrap !important;
   background: var(--bg-color1);
@@ -36,7 +38,7 @@
   position: relative;
   display: flex;
   width: 100%;
-  min-height: clamp(18rem, 40vw, 44rem);
+  min-height: var(--hero-min-height);
   overflow: hidden;
   border-radius: inherit;
 

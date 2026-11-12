@@ -18,8 +18,8 @@ header #logo,
 
 @media (min-width: variable.$screen-1) {
     .landing-page .localtoc {
-        margin-top: calc(var(--hero-height, 0px) + 1rem);
-        margin-bottom: calc(-1 * var(--hero-height, 0px) - 1rem);
+        margin-top: calc(var(--hero-height, calc(var(--hero-min-height) + 1px)) + 1rem);
+        margin-bottom: calc(-1 * var(--hero-height, calc(var(--hero-min-height) + 1px)) - 1rem);
     }
 }
 
