@@ -3,8 +3,10 @@
 ADI Open Source
 ===============
 
-.. flex::
-   :class: hero
+.. hero:: Open code,
+   :word: ship faster.
+
+   Explore our open source solutions to build with confidence.
 
 .. cards:: Repositories
    :class: grid repositories

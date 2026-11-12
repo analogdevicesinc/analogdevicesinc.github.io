@@ -24,6 +24,37 @@ def section_head(section, title, category):
         section += nodes.inline(text=category, classes=['collection-category'])
 
 
+class directive_hero(Directive):
+    required_arguments = 1
+    final_argument_whitespace = True
+    has_content = True
+    option_spec = {
+        'word': directives.unchanged_required,
+    }
+
+    def run(self):
+        hero = nodes.container(classes=['hero'])
+        panel = nodes.container(classes=['hero-panel'])
+        inner = nodes.section(classes=['hero-inner'], ids=['hero-introduction'])
+        eyebrow = nodes.container(classes=['hero-eyebrow'])
+        eyebrow += nodes.inline(text='ADI')
+        eyebrow += nodes.Text(' ')
+        eyebrow += nodes.inline(text='Open Source')
+        title = nodes.title(classes=['hero-headline'])
+        title += nodes.Text(self.arguments[0] + ' ')
+        title += nodes.inline(text=self.options.get('word', 'ship faster.'), classes=['hero-word'])
+        inner += eyebrow
+        inner += title
+        content = nodes.container()
+        self.state.nested_parse(self.content, self.content_offset, content)
+        for child in content.children:
+            child['classes'].append('hero-lead')
+            inner += child
+        panel += inner
+        hero += panel
+        return [hero]
+
+
 class directive_cards(Directive):
     """
     Renders repository cards.
@@ -158,6 +189,7 @@ def builder_inited(app):
 def setup(app):
     app.add_config_value('landing_data_dir', '_data', 'env')
 
+    app.add_directive('hero', directive_hero)
     app.add_directive('cards', directive_cards)
     app.add_directive('cards-collection', directive_cards_collection)
     app.add_directive('section', directive_section)

@@ -26,7 +26,8 @@ export class Hero {
   }
 
   construct () {
-    this.mount()
+    if (!this.mount())
+      return
     this.init_background()
     this.init_words()
     this.init_height()
@@ -54,45 +55,17 @@ export class Hero {
   mount () {
     const container = document.querySelector("div.hero")
 
-    if (!container) {
-      console.warn("Hero: div.hero not on page.")
-      return
-    }
-    if (container.querySelector(".hero-panel"))
-      container.replaceChildren()
-
-    const panel = DOM.new("section", { className: "hero-panel" })
-    const inner = DOM.new("div", { className: "hero-inner" })
-    const eyebrow = DOM.new("div", { className: "hero-eyebrow" })
-    eyebrow.append(
-      DOM.new("span", { innerText: "ADI" }),
-      DOM.new("span", { innerText: "Open Source" })
-    )
-    inner.append(
-      eyebrow,
-      this.add_headline(),
-      DOM.new("p", {
-        className: "hero-lead",
-        innerText: "Explore our open source solutions to build with confidence."
-      }),
-    )
-    panel.append(
-      this.add_canvas(),
-      inner,
-    )
-
-    container.append(panel)
+    const panel = container?.querySelector(".hero-panel")
+    if (!panel)
+      return false
 
     this.$.container = container
-  }
-
-  add_headline () {
-    const h1 = DOM.new("h1", { className: "hero-headline" })
-    const word = DOM.new("span", { className: "hero-word", innerText: words[0] })
-    h1.append("Open code, ", word)
-    this.$.headline = h1
-    this.$.word = word
-    return h1
+    this.$.headline = panel.querySelector(".hero-headline")
+    this.$.word = panel.querySelector(".hero-word")
+    this.$.canvas = panel.querySelector("canvas#hero-pixels")
+    if (!this.$.canvas)
+      panel.prepend(this.add_canvas())
+    return true
   }
 
   init_words () {
