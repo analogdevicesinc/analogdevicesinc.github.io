@@ -12,7 +12,10 @@ from adi_doctools.cli.aux_os import aux_killpg
 root_dir = path.abspath(path.dirname(__file__))
 static_path = path.join(root_dir, 'docs', 'sources')
 rollup_conf = path.join(root_dir, 'scripts', 'rollup.config.mjs')
-sass_conf = path.join(root_dir, 'style', 'bundle.scss') + ':' + path.join(static_path, 'custom.min.css')
+sass_conf = ' '.join([
+    path.join(root_dir, 'style', 'bundle.scss') + ':' + path.join(static_path, 'custom.min.css'),
+    path.join(root_dir, 'style', 'arcade.scss') + ':' + path.join(static_path, 'games.min.css'),
+])
 
 doctools_path = path.abspath(path.join(path.dirname(inspect.getfile(aux_killpg)), pardir, pardir))
 sass_shared = path.join(doctools_path, 'adi_doctools', 'theme', 'harmonic', 'style')

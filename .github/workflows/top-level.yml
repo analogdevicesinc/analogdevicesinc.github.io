@@ -51,6 +51,7 @@ jobs:
         node_modules/.bin/sass
         --load-path ./doctools/adi_doctools/theme/harmonic/style
         style/bundle.scss:docs/sources/custom.min.css
+        style/arcade.scss:docs/sources/games.min.css
         --style compressed
 
     - name: Build doc

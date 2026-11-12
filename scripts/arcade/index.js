@@ -2,7 +2,8 @@
 
 // ADI Arcade: full-screen overlay that hosts the games. It owns the canvas,
 // the render loop, input, fullscreen and the game picker, so each game only
-// implements update/render/pointer. Loaded on demand as window.ADIArcade.
+// implements update/render/pointer. Built as games.umd.js and loaded on demand
+// as window.Games.
 
 import { games } from './games/index.js'
 import { Field, ambient } from './field.js'

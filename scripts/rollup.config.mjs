@@ -25,6 +25,5 @@ const bundle = (input, file, name) => ({
 
 export default [
   bundle(`./scripts/landing-page.js`, `./docs/sources/custom.umd.js`, "LandingPage"),
-  // Loaded on demand by event-banner.js, exposed as window.ADIArcade.
-  bundle(`./scripts/arcade/index.js`, `./docs/sources/arcade.umd.js`, "ADIArcade"),
+  bundle(`./scripts/arcade/index.js`, `./docs/sources/games.umd.js`, "Games"),
 ]

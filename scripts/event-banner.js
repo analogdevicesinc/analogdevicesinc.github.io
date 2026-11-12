@@ -3,34 +3,56 @@
 import { DOM } from '@shared/scripts/dom.js'
 
 // Adds the Play button to the electronica banner (`.event-banner` in
-// docs/index.rst) and lazy-loads the arcade bundle, so the landing page does
-// not pay for the games until the banner is near the viewport or clicked.
+// docs/index.rst). The games bundle (games.umd.js + games.min.css) is only
+// fetched once Play is clicked.
 
-const bundle = 'arcade.umd.js'
+const assets = { script: 'games.umd.js', style: 'games.min.css' }
 let loading
 
-const bundle_url = () => {
+const asset_url = name => {
   const script = document.querySelector('script[src*="custom.umd.js"]')
   return script
-    ? new URL(bundle, script.src).href
-    : new URL(`_static/${bundle}`, document.baseURI).href
+    ? new URL(name, script.src).href
+    : new URL(`_static/${name}`, document.baseURI).href
 }
 
-export const load_arcade = () => {
-  if (window.ADIArcade) return Promise.resolve(window.ADIArcade)
+const load_style = href => new Promise((resolve, reject) => {
+  const existing = document.querySelector(`link[data-games-style]`)
+  if (existing) return resolve()
+  const link = document.createElement('link')
+  link.rel = 'stylesheet'
+  link.href = href
+  link.dataset.gamesStyle = ''
+  link.onload = () => resolve()
+  link.onerror = () => {
+    link.remove()
+    reject(new Error(`Could not load ${href}`))
+  }
+  document.head.append(link)
+})
 
-  loading ??= new Promise((resolve, reject) => {
-    const script = document.createElement('script')
-    const fail = () => {
-      loading = undefined
-      script.remove()
-      reject(new Error(`Could not load ${bundle}`))
-    }
-    script.src = bundle_url()
-    script.async = true
-    script.onload = () => window.ADIArcade ? resolve(window.ADIArcade) : fail()
-    script.onerror = fail
-    document.head.append(script)
+const load_script = src => new Promise((resolve, reject) => {
+  const script = document.createElement('script')
+  script.src = src
+  script.async = true
+  script.onload = () => window.Games ? resolve(window.Games) : reject(new Error('Games missing'))
+  script.onerror = () => {
+    script.remove()
+    reject(new Error(`Could not load ${src}`))
+  }
+  document.head.append(script)
+})
+
+export const load_games = () => {
+  if (window.Games && document.querySelector('link[data-games-style]')) {
+    return Promise.resolve(window.Games)
+  }
+  loading ??= Promise.all([
+    load_style(asset_url(assets.style)),
+    window.Games ? Promise.resolve(window.Games) : load_script(asset_url(assets.script)),
+  ]).then(([, games]) => games).catch(error => {
+    loading = undefined
+    throw error
   })
   return loading
 }
@@ -56,31 +78,23 @@ export class EventBanner {
 
     this.$.banner = banner
     this.$.button = button
-
-    if ('IntersectionObserver' in window) {
-      this.observer = new IntersectionObserver(entries => {
-        if (!entries.some(entry => entry.isIntersecting)) return
-        this.observer.disconnect()
-        load_arcade().catch(() => {})
-      }, { rootMargin: '200px' })
-      this.observer.observe(banner)
-    }
   }
 
   play () {
     const button = this.$.button
-    // Open synchronously when preloaded, so fullscreen keeps the user gesture.
-    if (window.ADIArcade) {
-      window.ADIArcade.open({ opener: button })
+    if (window.Games && document.querySelector('link[data-games-style]')) {
+      window.Games.open({ opener: button })
       return
     }
 
     button.disabled = true
     button.dataset.state = 'loading'
-    load_arcade()
-      .then(arcade => {
+    button.querySelector('span').textContent = 'Loading…'
+    load_games()
+      .then(games => {
         delete button.dataset.state
-        arcade.open({ opener: button })
+        button.querySelector('span').textContent = 'Play'
+        games.open({ opener: button })
       })
       .catch(() => {
         button.dataset.state = 'error'
@@ -92,10 +106,9 @@ export class EventBanner {
   }
 
   deinit () {
-    this.observer?.disconnect()
     this.$.button?.removeEventListener('click', this.on_click)
     this.$.button?.remove()
-    window.ADIArcade?.close()
+    window.Games?.close()
     this.$ = {}
   }
 }
