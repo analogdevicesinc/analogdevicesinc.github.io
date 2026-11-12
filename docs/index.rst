@@ -45,14 +45,36 @@ ADI Open Source
    :tabs: workshop tutorial demo
    :view-all: system-level/learning/
 
-Sponsoring
-----------
+.. section:: Sponsoring
+   :class: sponsorship
+   :category: Giving back
 
-.. grid::
-   :columns: 3
+   Open source is a shared effort, we support the projects that help us
+   build, test, and collaborate.
 
-   .. card::
+   .. container:: sponsor-feature
 
-      .. image:: badges/labgrid.svg
+      .. container:: sponsor-copy
 
-      `labgrid's docs <https://labgrid.readthedocs.io/en/latest/>`__
+         .. container:: sponsor-tier
+
+            Silver sponsor · 2026
+
+         .. rubric:: labgrid
+            :class: sponsor-name
+
+         From quick hardware tests to continuous testing.
+
+         labgrid is an embedded board control python library with a focus on
+         testing, development and general automation. It includes a remote
+         control layer to control boards connected to other hosts.
+
+         .. container:: sponsor-link
+
+            `Explore labgrid’s documentation → <https://labgrid.readthedocs.io/en/latest/>`__
+
+      .. container:: sponsor-badge
+
+         .. image:: badges/labgrid.svg
+            :alt: labgrid — Silver sponsor, 2026
+            :width: 280px

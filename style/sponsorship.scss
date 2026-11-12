@@ -1,0 +1,102 @@
+@use "variable";
+
+.sponsorship {
+    > p {
+        max-width: 42em;
+        color: var(--text-color3);
+    }
+
+    .sponsor-feature {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(200px, .65fr);
+        align-items: center;
+        gap: clamp(1.5rem, 4vw, 3.5rem);
+        margin-top: .75rem;
+        padding: clamp(1.5rem, 4vw, 3rem);
+        border: 1px solid rgba(125,125,125,.5);
+        border-radius: variable.$border-radius;
+        background: var(--bg-color1);
+    }
+
+    .sponsor-copy {
+        min-width: 0;
+
+        > p:not(.sponsor-name) {
+            color: var(--text-color3);
+        }
+
+        > .sponsor-name + p {
+            color: var(--text-color1);
+            font-size: 1.125em;
+            font-weight: 600;
+        }
+    }
+
+    .sponsor-tier {
+        display: inline-block;
+        padding: .35em .75em;
+        border: 1px solid rgba(125,125,125,.5);
+        border-radius: variable.$border-radius;
+        color: var(--text-color2);
+        font-size: .75em;
+        font-weight: 600;
+
+        p {
+            margin: 0;
+        }
+    }
+
+    .sponsor-name {
+        margin: .75rem 0 .5rem;
+        color: var(--text-color1);
+        font-size: 2.5em;
+        font-weight: 700;
+        line-height: 1.1;
+    }
+
+    .sponsor-link {
+        margin-top: 1.5rem;
+
+        p {
+            margin-bottom: 0;
+        }
+
+        a {
+            font-weight: 600;
+            text-underline-offset: .25em;
+
+            &:focus-visible {
+                outline: 2px solid var(--accent-color);
+                outline-offset: 5px;
+                border-radius: 2px;
+            }
+        }
+    }
+
+    .sponsor-badge {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+
+        img {
+            display: block;
+            width: 100%;
+            max-width: 280px;
+            height: auto;
+        }
+    }
+
+    @media (max-width: variable.$screen-1) {
+        .sponsor-feature {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .sponsor-badge {
+            width: 100%;
+            max-width: 320px;
+            box-sizing: border-box;
+            justify-self: center;
+        }
+    }
+}
