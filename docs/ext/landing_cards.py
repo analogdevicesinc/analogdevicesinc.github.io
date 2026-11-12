@@ -126,8 +126,9 @@ def placeholder(name):
 
 
 def collection_card(name, value, filters, visible):
-    image = (f'<img src="{href(value["image"])}" loading="lazy" alt="">'
-             if value.get('image') else placeholder(name))
+    image = placeholder(name)
+    if value.get('image'):
+        image += f'<img src="{href(value["image"])}" loading="lazy" alt="">'
     description = (f'<hr><div class="description">{escape(value["description"])}</div>'
                    if value.get('description') else '')
     return (

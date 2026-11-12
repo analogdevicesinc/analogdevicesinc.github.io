@@ -10,6 +10,20 @@ class Landing {
   constructor () {
     this.controller = new AbortController()
     const body = DOM.get('.body')
+    body.querySelectorAll('.cards.collection .img-container img').forEach(image => {
+      const reveal = async () => {
+        try {
+          await image.decode()
+        } catch {}
+        if (!this.controller.signal.aborted && image.naturalWidth > 0)
+          image.classList.add('is-loaded')
+      }
+      const options = { once: true, signal: this.controller.signal }
+      image.addEventListener('load', reveal, options)
+      image.addEventListener('error', reveal, options)
+      if (image.complete)
+        reveal()
+    })
     body.querySelectorAll('.tabs').forEach(bar => {
       const grid = bar.nextElementSibling
       if (!grid?.classList.contains('cards'))

@@ -227,6 +227,8 @@ section:has(> .collection-category) {
 
 .cards.collection {
     .img-container {
+        position: relative;
+        isolation: isolate;
         background: #fff;
         margin: -1em -1em .5em -1em;
         border-radius: variable.$border-radius variable.$border-radius 0 0;
@@ -248,12 +250,33 @@ section:has(> .collection-category) {
             height: 100%;
             object-fit: cover;
         }
+
+        img {
+            position: absolute;
+            inset: 0;
+            background: #fff;
+            opacity: .75;
+            transition: opacity .4s ease;
+
+            @media (prefers-reduced-motion: reduce) {
+                transition: none;
+            }
+        }
     }
+    .entry:hover .img-container img,
+    .entry:focus-visible .img-container img {
+        opacity: 1;
+    }
+
     .entry > span {
         display: flex;
         flex-direction: column;
         justify-content: space-between;
     }
+}
+
+.js-on .cards.collection .img-container img:not(.is-loaded) {
+    opacity: 0;
 }
 
 .cards.collection.grid {
