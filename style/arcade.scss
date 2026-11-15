@@ -147,10 +147,26 @@ html.adi-arcade-open {
   }
 }
 
+// Wide screens take four across, so seven cards make two rows.
+@media (min-width: 1200px) {
+  .adi-arcade-games {
+    --columns: 4;
+    width: min(100%, 76rem);
+  }
+}
+
 @media (max-width: 960px) {
   .adi-arcade-games {
     --columns: 2;
     width: min(100%, 40rem);
+  }
+}
+
+// Three rows of cards, on screens that are not tall: less room around them.
+@media (min-width: 641px) and (max-width: 1199px) and (max-height: 860px) {
+  .adi-arcade-menu {
+    gap: 1.25rem;
+    padding: 3.5rem 1.5rem 1.5rem;
   }
 }
 
@@ -304,11 +320,17 @@ html.adi-arcade-open {
   }
 }
 
-// Short and wide (phones in landscape): keep the cards side by side.
+// Short and wide (phones in landscape): keep the cards side by side, four
+// across so seven make two rows.
 @media (max-height: 560px) and (min-width: 641px) {
   .adi-arcade-games {
-    --columns: 3;
-    width: min(100%, 60rem);
+    --columns: 4;
+    width: min(100%, 76rem);
+  }
+
+  // No room for taglines in cards this narrow and short.
+  .adi-arcade-game-tagline {
+    display: none;
   }
 }
 
