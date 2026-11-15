@@ -9,8 +9,10 @@ import { Chip, note } from '../chip.js'
 // than wide, top and bottom. Everything is drawn by the pixel field.
 //
 // - Each player drags on their own side; keys work too (W/S or A/D and the
-//   arrows). A paddle nobody has touched for a few seconds is driven by the
-//   computer, so the game also works alone.
+//   arrows). On touch screens the paddles sit in from the edge, leaving a
+//   strip behind them to drag on, so fingers stay off the ball. A paddle
+//   nobody has touched for a few seconds is driven by the computer, so the
+//   game also works alone.
 // - The ball leaves the paddle at an angle set by where it hits, and speeds
 //   up with every return until the point ends.
 // - Power-ups appear mid-board; the last player to hit the ball collects
@@ -96,7 +98,14 @@ class Pong {
     this.state_time = 0
     this.chip = null
     this.music = null
+    this.touch = window.matchMedia?.('(pointer: coarse)').matches ?? false
     this.reset()
+  }
+
+  // Where the paddles' faces sit, in from the goal lines: on touch screens
+  // far enough for a finger to drag behind them.
+  get inset () {
+    return this.touch ? 0.13 : 0.035
   }
 
   // -- Board ----------------------------------------------------------------
@@ -180,6 +189,7 @@ class Pong {
     if (this.state !== 'playing') return
     const [a, l] = this.to_board(x, y)
     const mouse = event.pointerType === 'mouse'
+    if (!mouse && !this.touch) this.touch = true
     if (type === 'down' || (mouse && type === 'move')) {
       const paddle = this.paddles[a < 0.5 ? 0 : 1]
       if (mouse) {
@@ -368,7 +378,7 @@ class Pong {
 
       // Paddles.
       for (const paddle of this.paddles) {
-        const face = paddle.index === 0 ? thick * 2 : 1 - thick * 2
+        const face = paddle.index === 0 ? this.inset + thick / 2 : 1 - this.inset - thick / 2
         const toward = paddle.index === 0 ? ball.va < 0 : ball.va > 0
         if (!toward) continue
         const past = paddle.index === 0 ? ball.a - radius < face : ball.a + radius > face
@@ -393,9 +403,11 @@ class Pong {
     }
 
     // Past a goal line: a point for the other side.
-    const out = this.balls.filter(ball => ball.a < -radius * 2 || ball.a > 1 + radius * 2)
+    // Past a paddle and into the strip behind it: a point for the other side.
+    const gone = this.inset - radius * 4
+    const out = this.balls.filter(ball => ball.a < gone || ball.a > 1 - gone)
     for (const ball of out) {
-      const scorer = ball.a < 0 ? 1 : 0
+      const scorer = ball.a < 0.5 ? 1 : 0
       this.balls.splice(this.balls.indexOf(ball), 1)
       if (this.state === 'playing') this.point(scorer, ball)
       else this.goal_flash[1 - scorer] = 0.6
@@ -458,7 +470,7 @@ class Pong {
     this.scores[scorer] += 1
     this.goal_flash[1 - scorer] = 1
     this.serve_to = 1 - scorer
-    this.ripples.push({ a: ball.a < 0 ? 0 : 1, l: ball.l, age: 0, life: 0.9, speed: 2.4, hot: true })
+    this.ripples.push({ a: ball.a < 0.5 ? this.inset : 1 - this.inset, l: ball.l, age: 0, life: 0.9, speed: 2.4, hot: true })
     if (this.scores[scorer] >= win_score) {
       this.game_over(scorer)
       return
@@ -513,20 +525,30 @@ class Pong {
     const winner = this.winner
     const over = this.state === 'over'
     const halves = paddles.map(paddle => this.paddle_half(paddle, layout))
+    const inset = this.inset
+    const strip = this.touch
 
     this.stage.field.draw(ctx, width, height, (x, y, column, row, out) => {
       const [a, l] = this.to_board(x, y, layout)
       const on_board = a >= -thick / 2 && a <= 1 + thick / 2 && l >= -thick * ratio / 2 && l <= 1 + thick * ratio / 2
-      let level = ambient(x / width, y / height, time) * (on_board ? 0.3 : 0.14)
+      // The strips behind the paddles, where the fingers go, are quiet.
+      const behind = a < inset - thick || a > 1 - inset + thick
+      let level = ambient(x / width, y / height, time) * (on_board && !behind ? 0.3 : 0.14)
 
       if (!on_board) {
         out.level = level
         return
       }
+      if (behind && strip) {
+        // A faint tint in the player's colour, so the strip reads as theirs.
+        out.level = 0.12 + level * 0.3
+        out.color = colors.players[a < 0.5 ? 0 : 1]
+        return
+      }
 
       // Paddles.
       for (const paddle of paddles) {
-        const face = paddle.index === 0 ? thick * 1.5 : 1 - thick * 1.5
+        const face = paddle.index === 0 ? inset : 1 - inset
         if (Math.abs(a - face) > thick * 0.75) continue
         if (Math.abs(l - paddle.pos) > halves[paddle.index]) continue
         out.level = 0.95
@@ -603,8 +625,8 @@ class Pong {
       }
 
       // A beaten goal line flashes hot.
-      const near_goal = Math.min(a, 1 - a)
       const side = a < 0.5 ? 0 : 1
+      const near_goal = Math.max(0, (side === 0 ? a : 1 - a) - inset)
       if (flash[side] > 0 && near_goal < 0.08) {
         heat = Math.max(heat, flash[side] * (1 - near_goal / 0.08) * (0.5 + 0.5 * hash(column + flicker * 0.41, row)))
       }
@@ -657,7 +679,8 @@ class Pong {
       const sides = this.layout.landscape ? 'left and right' : 'top and bottom'
       add('ADI ARCADE', { size: 12, weight: 700, color: colors.accent, spacing: '3px' }, 0)
       add('PONG', { size: title, weight: 800, spacing: '2px' }, title + 12)
-      paragraph(`Two players, ${sides}. Drag on your side to move your paddle, or use W/S and the arrows. First to ${win_score}.`,
+      const how = this.touch ? 'Drag on the strip behind your paddle' : 'Move the mouse on your side, or use W/S and the arrows,'
+      paragraph(`Two players, ${sides}. ${how} to move your paddle. First to ${win_score}.`,
         { size: 16, weight: 500, color: colors.muted }, 34)
       paragraph('Hit the power-ups with the ball: grow, shrink the other paddle, split the ball, or speed it up. Alone, the computer takes the other side.',
         { size: 14, weight: 500, color: colors.muted }, 26)
