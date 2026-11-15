@@ -527,6 +527,17 @@ class Pong {
     const halves = paddles.map(paddle => this.paddle_half(paddle, layout))
     const inset = this.inset
     const strip = this.touch
+    // Each paddle is exactly one cell thick: the grid line nearest its face.
+    // The field centres its grid, see Field.draw.
+    const cell = width < 640 ? 15 : 19
+    const columns = Math.ceil(width / cell) + 1
+    const rows = Math.ceil(height / cell) + 1
+    const offset_x = Math.round((width - columns * cell) * 0.5)
+    const offset_y = Math.round((height - rows * cell) * 0.5)
+    const lines = paddles.map(paddle => {
+      const [px, py] = this.to_screen(paddle.index === 0 ? inset : 1 - inset, 0.5, layout)
+      return layout.landscape ? Math.floor((px - offset_x) / cell) : Math.floor((py - offset_y) / cell)
+    })
 
     this.stage.field.draw(ctx, width, height, (x, y, column, row, out) => {
       const [a, l] = this.to_board(x, y, layout)
@@ -548,8 +559,7 @@ class Pong {
 
       // Paddles.
       for (const paddle of paddles) {
-        const face = paddle.index === 0 ? inset : 1 - inset
-        if (Math.abs(a - face) > thick * 0.75) continue
+        if ((layout.landscape ? column : row) !== lines[paddle.index]) continue
         if (Math.abs(l - paddle.pos) > halves[paddle.index]) continue
         out.level = 0.95
         out.color = colors.players[paddle.index]
