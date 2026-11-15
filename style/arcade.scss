@@ -65,9 +65,25 @@ html.adi-arcade-open {
     outline-offset: 2px;
   }
 
-  &[data-action="close"] {
+  &[data-action="close"],
+  &.adi-arcade-mute {
     width: 36px;
     padding: 0;
+  }
+
+  // Muted: dimmed, the slash shown.
+  &.adi-arcade-mute {
+    .slash {
+      display: none;
+    }
+
+    &[data-muted="true"] {
+      color: rgba(233, 238, 245, .55);
+
+      .slash {
+        display: block;
+      }
+    }
   }
 
   svg {

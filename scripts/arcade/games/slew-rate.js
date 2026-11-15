@@ -69,6 +69,7 @@ const bend_max = waves.reduce((sum, [a, l]) => sum + a / (l * l), 0)
 const tune = {
   hats: 0.5,
   hat_volume: 0.08,
+  transpose: -12,
   lead:
     'A4:0.5 C5:0.5 E5 D5:0.5 C5:0.5 D5 ' +
     'E5:1.5 G5:0.5 E5 D5 ' +

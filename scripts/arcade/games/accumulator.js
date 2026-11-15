@@ -2,6 +2,7 @@
 
 import { clamp, mix, hash, ambient, difficulty } from '../field.js'
 import { text, wrap, hud } from '../ui.js'
+import { Chip } from '../chip.js'
 
 // Accumulator: absorb the data bits and every signal smaller than you, avoid
 // the bigger ones, in a world larger than the screen. Everything is drawn by
@@ -44,6 +45,29 @@ const colors = {
 const radius_of = mass => Math.sqrt(mass) * 10
 const speed_of = mass => 300 * Math.pow(mass / start_mass, -0.3)
 
+// A floating, wandering tune on an F pentatonic: drifting through a world
+// bigger than the screen.
+const tune = {
+  bpm: 112,
+  hats: 2,
+  hat_volume: 0.05,
+  volume: 0.12,
+  lead:
+    'F4 A4:0.5 C5:0.5 D5 C5 ' +
+    'A4:1.5 G4:0.5 F4 R ' +
+    'D4 F4:0.5 G4:0.5 A4 G4 ' +
+    'F4:1.5 D4:0.5 C4 R ' +
+    'F4 A4:0.5 C5:0.5 D5 F5 ' +
+    'D5:1.5 C5:0.5 A4 R ' +
+    'G4 A4:0.5 G4:0.5 F4 D4 ' +
+    'F4:3 R',
+  bass:
+    'F2 R C3 R Bb2 R C3 R ' +
+    'D2 R A2 R Bb2 R C3 R ' +
+    'F2 R C3 R D2 R A2 R ' +
+    'Bb2 R C3 R F2 R C3 R',
+}
+
 class Accumulator {
   constructor (stage) {
     this.stage = stage
@@ -55,6 +79,8 @@ class Accumulator {
     this.steer = null
     this.stick = null
     this.food_at = new Float32Array(0)
+    this.chip = null
+    this.music = null
     this.reset()
   }
 
@@ -96,11 +122,16 @@ class Accumulator {
     for (let i = 0; i < 12; i++) this.spawn_bot()
   }
 
+  // Called from a tap or key press, so audio may start.
   start () {
+    this.chip ??= new Chip()
+    this.chip.resume()
     this.reset()
     this.stick = null
     this.state = 'playing'
     this.state_time = 0
+    this.music?.stop()
+    this.music = this.chip.tune(tune)
   }
 
   // -- View -----------------------------------------------------------------
@@ -287,6 +318,8 @@ class Accumulator {
   game_over () {
     this.state = 'over'
     this.state_time = 0
+    this.music?.stop()
+    this.music = null
     this.action = null
     this.merging = false
     const peak = Math.round(this.peak)
@@ -302,6 +335,7 @@ class Accumulator {
   update (dt) {
     this.time += dt
     this.state_time += dt
+    this.music?.update()
     this.flash = Math.max(0, this.flash - dt * 3)
 
     const playing = this.state === 'playing'
@@ -752,7 +786,12 @@ class Accumulator {
     text(ctx, this.stage.font, value, x, y, style)
   }
 
-  destroy () {}
+  destroy () {
+    this.music?.stop()
+    this.music = null
+    this.chip?.close()
+    this.chip = null
+  }
 }
 
 export default {

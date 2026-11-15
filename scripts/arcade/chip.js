@@ -6,6 +6,29 @@
 
 const duties = { pulse: 0.25, thin: 0.125, square: 0.5 }
 
+// Music and sound effects can be muted separately, for every game, and the
+// choice is remembered.
+const mute_key = 'adi-arcade:mute'
+const live = new Set()
+export const sound = {
+  music: true,
+  effects: true,
+  load () {
+    try {
+      Object.assign(this, JSON.parse(localStorage.getItem(mute_key)) ?? {})
+    } catch {}
+    return this
+  },
+  toggle (channel) {
+    this[channel] = !this[channel]
+    try {
+      localStorage.setItem(mute_key, JSON.stringify({ music: this.music, effects: this.effects }))
+    } catch {}
+    for (const chip of live) chip.apply_mute()
+  },
+}
+sound.load()
+
 export class Chip {
   constructor () {
     const Context = window.AudioContext ?? window.webkitAudioContext
@@ -14,6 +37,13 @@ export class Chip {
     this.master = this.ctx.createGain()
     this.master.gain.value = 0.2
     this.master.connect(this.ctx.destination)
+    // Two buses into the master, one per mute toggle.
+    this.buses = { music: this.ctx.createGain(), effects: this.ctx.createGain() }
+    for (const bus of Object.values(this.buses)) bus.connect(this.master)
+    // Where the next sounds go; tune() switches it to the music bus.
+    this.bus = this.buses.effects
+    live.add(this)
+    this.apply_mute()
 
     const harmonics = 32
     this.waves = {}
@@ -38,6 +68,24 @@ export class Chip {
   }
 
   get now () { return this.ctx.currentTime }
+
+  apply_mute () {
+    if (!this.ctx) return
+    for (const [channel, bus] of Object.entries(this.buses)) {
+      bus.gain.setTargetAtTime(sound[channel] ? 1 : 0, this.ctx.currentTime, 0.02)
+    }
+  }
+
+  // Runs `fn` with its sounds routed to the music bus.
+  as_music (fn) {
+    const bus = this.bus
+    this.bus = this.buses.music
+    try {
+      return fn()
+    } finally {
+      this.bus = bus
+    }
+  }
 
   resume () {
     if (this.ctx?.state === 'suspended' && !document.hidden) this.ctx.resume().catch(() => {})
@@ -66,7 +114,7 @@ export class Chip {
     gain.gain.setValueAtTime(volume * 0.6, Math.max(start, end - 0.02))
     gain.gain.linearRampToValueAtTime(0, end)
 
-    osc.connect(gain).connect(this.master)
+    osc.connect(gain).connect(this.bus)
     osc.start(start)
     osc.stop(end + 0.02)
   }
@@ -87,7 +135,7 @@ export class Chip {
     const gain = this.ctx.createGain()
     gain.gain.setValueAtTime(volume, start)
     gain.gain.linearRampToValueAtTime(0, end)
-    osc.connect(gain).connect(this.master)
+    osc.connect(gain).connect(this.bus)
     osc.start(start)
     osc.stop(end + 0.02)
   }
@@ -109,7 +157,7 @@ export class Chip {
     const gain = this.ctx.createGain()
     gain.gain.setValueAtTime(volume, start)
     gain.gain.exponentialRampToValueAtTime(0.001, end)
-    source.connect(shape).connect(gain).connect(this.master)
+    source.connect(shape).connect(gain).connect(this.bus)
     source.start(start)
     source.stop(end + 0.02)
   }
@@ -121,18 +169,23 @@ export class Chip {
   // A looping tune: a lead and a bass line as note strings ('C5 E5:0.5 R'
   // for a rest), with hats every `hats` beats. Call update() every frame to
   // keep it scheduled ahead on the audio clock; set() changes the tempo
-  // without the voices drifting apart.
-  tune ({ lead = '', bass = '', bpm = 140, hats = 0, volume = 0.14, bass_volume = 0.3, hat_volume = 0.1, wave = 'pulse', delay = 0.1 } = {}) {
+  // without the voices drifting apart. `transpose` shifts the lead, in
+  // semitones.
+  tune ({ lead = '', bass = '', bpm = 140, hats = 0, volume = 0.14, bass_volume = 0.3, hat_volume = 0.1, wave = 'pulse', transpose = 0, delay = 0.1 } = {}) {
     if (!this.ctx) return { update () {}, set () {}, stop () {} }
-    const parse = line => line.trim().split(/\s+/).filter(Boolean).map(entry => {
+    const parse = (line, shift = 0) => line.trim().split(/\s+/).filter(Boolean).map(entry => {
       const [pitch, beats] = entry.split(':')
-      return { freq: pitch === 'R' ? 0 : note(pitch), beats: Number(beats ?? 1) }
+      return { freq: pitch === 'R' ? 0 : freq_of(midi_of(pitch) + shift), beats: Number(beats ?? 1) }
     })
     const voices = [
-      { notes: parse(lead), play: (freq, duration, at) => this.play(freq, duration * 0.85, { delay: at, volume, wave }) },
+      { notes: parse(lead, transpose), play: (freq, duration, at) => this.play(freq, duration * 0.85, { delay: at, volume, wave }) },
       { notes: parse(bass), play: (freq, duration, at) => this.play(freq, duration * 0.8, { delay: at, bass: true, volume: bass_volume }) },
     ]
     if (hats) voices.push({ notes: [{ freq: 1, beats: hats }], play: (freq, duration, at) => this.hat(at, hat_volume) })
+    for (const voice of voices) {
+      const play = voice.play
+      voice.play = (...args) => this.as_music(() => play(...args))
+    }
     for (const voice of voices) {
       voice.index = 0
       voice.pos = 0
@@ -185,7 +238,7 @@ export class Chip {
       chain = chain.connect(shape)
     }
     const amp = ctx.createGain()
-    chain.connect(amp).connect(gain).connect(this.master)
+    chain.connect(amp).connect(gain).connect(this.bus)
     let lfo = null
     if (flutter) {
       lfo = this.oscillator('square')
@@ -220,6 +273,7 @@ export class Chip {
 
   close () {
     if (!this.ctx) return
+    live.delete(this)
     document.removeEventListener('visibilitychange', this.on_visibility)
     this.ctx.close().catch(() => {})
     this.ctx = null

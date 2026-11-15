@@ -2,6 +2,7 @@
 
 import { clamp, mix, hash, ambient, difficulty } from '../field.js'
 import { text, wrap, hud } from '../ui.js'
+import { Chip } from '../chip.js'
 
 // Interference: noise closes in on a chip at the center of the field. Each
 // click emits a counter-wave; noise touched by the wave front is cancelled.
@@ -48,6 +49,33 @@ const colors = {
   danger: '#ff6b6b',
 }
 
+// A tense, pulsing tune in D minor: a signal holding steady while the noise
+// closes in.
+const tune = {
+  bpm: 126,
+  hats: 1,
+  hat_volume: 0.07,
+  volume: 0.12,
+  lead:
+    'D4:0.5 D4:0.5 R:0.5 D4:0.5 F4:0.5 R:0.5 E4 ' +
+    'D4:0.5 D4:0.5 R:0.5 A3:0.5 C4:1.5 R:0.5 ' +
+    'D4:0.5 D4:0.5 R:0.5 D4:0.5 G4:0.5 R:0.5 F4 ' +
+    'E4:0.5 D4:0.5 C#4:1.5 R:1.5 ' +
+    'F4:0.5 F4:0.5 R:0.5 F4:0.5 A4:0.5 R:0.5 G4 ' +
+    'F4:0.5 E4:0.5 D4:1.5 R:1.5 ' +
+    'A3:0.5 C4:0.5 D4:0.5 E4:0.5 F4:0.5 E4:0.5 D4:0.5 C#4:0.5 ' +
+    'D4:2 R:2',
+  bass:
+    'D2:0.5 D2:0.5 D2:0.5 D3:0.5 D2:0.5 D2:0.5 D2:0.5 D3:0.5 ' +
+    'D2:0.5 D2:0.5 D2:0.5 D3:0.5 C2:0.5 C2:0.5 C2:0.5 C3:0.5 ' +
+    'Bb1:0.5 Bb1:0.5 Bb1:0.5 Bb2:0.5 Bb1:0.5 Bb1:0.5 Bb1:0.5 Bb2:0.5 ' +
+    'A1:0.5 A1:0.5 A1:0.5 A2:0.5 A1:0.5 A1:0.5 A1:0.5 A2:0.5 ' +
+    'Bb1:0.5 Bb1:0.5 Bb1:0.5 Bb2:0.5 Bb1:0.5 Bb1:0.5 Bb1:0.5 Bb2:0.5 ' +
+    'G1:0.5 G1:0.5 G1:0.5 G2:0.5 G1:0.5 G1:0.5 G1:0.5 G2:0.5 ' +
+    'F2:0.5 F2:0.5 F2:0.5 F3:0.5 A1:0.5 A1:0.5 A1:0.5 A2:0.5 ' +
+    'D2:0.5 D2:0.5 D2:0.5 D3:0.5 D2:0.5 D2:0.5 D2:0.5 D3:0.5',
+}
+
 class Interference {
   constructor (stage) {
     this.stage = stage
@@ -56,6 +84,8 @@ class Interference {
     this.time = 0
     this.state = 'ready'
     this.state_time = 0
+    this.chip = null
+    this.music = null
     this.reset()
   }
 
@@ -92,10 +122,15 @@ class Interference {
     this.best_beaten = false
   }
 
+  // Called from a tap or key press, so audio may start.
   start () {
+    this.chip ??= new Chip()
+    this.chip.resume()
     this.reset()
     this.state = 'playing'
     this.state_time = 0
+    this.music?.stop()
+    this.music = this.chip.tune(tune)
   }
 
   pointer (type, x, y) {
@@ -199,6 +234,8 @@ class Interference {
   game_over () {
     this.state = 'over'
     this.state_time = 0
+    this.music?.stop()
+    this.music = null
     this.pulses.push({ x: this.cx, y: this.cy, age: 0, life: 1.6, cool: false })
     if (this.score > this.best) {
       this.best = this.score
@@ -215,6 +252,7 @@ class Interference {
   update (dt) {
     this.time += dt
     this.state_time += dt
+    this.music?.update()
 
     const playing = this.state === 'playing'
     const scale = this.scale
@@ -509,7 +547,12 @@ class Interference {
     text(ctx, this.stage.font, value, x, y, style)
   }
 
-  destroy () {}
+  destroy () {
+    this.music?.stop()
+    this.music = null
+    this.chip?.close()
+    this.chip = null
+  }
 }
 
 export default {

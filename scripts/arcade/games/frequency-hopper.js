@@ -38,6 +38,7 @@ const bottom_margin = 24
 const tune = {
   bpm: 150,
   hats: 1,
+  transpose: -12,
   lead:
     'C5:0.5 E5:0.5 G5:0.5 E5:0.5 A5:0.5 G5:0.5 E5 ' +
     'D5:0.5 F5:0.5 A5:0.5 F5:0.5 G5:0.5 F5:0.5 D5 ' +

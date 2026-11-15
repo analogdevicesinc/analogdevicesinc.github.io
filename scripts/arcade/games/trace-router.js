@@ -2,6 +2,7 @@
 
 import { clamp, mix, hash, ambient, difficulty } from '../field.js'
 import { text, wrap, hud, hud_bottom } from '../ui.js'
+import { Chip } from '../chip.js'
 
 // Trace Router: pin pairs pop up on a PCB grid (the pixel field itself).
 // Drag from a pin to its partner to route a trace, cell by cell, horizontal
@@ -42,6 +43,32 @@ const colors = {
   cool: '139, 215, 207',
 }
 
+// A nimble, busy tune in G: traces zig-zagging across the board.
+const tune = {
+  bpm: 138,
+  hats: 0.5,
+  hat_volume: 0.06,
+  volume: 0.12,
+  lead:
+    'G4:0.5 B4:0.5 D5:0.5 B4:0.5 G4:0.5 B4:0.5 A4 ' +
+    'F#4:0.5 A4:0.5 D5:0.5 A4:0.5 F#4:0.5 A4:0.5 G4 ' +
+    'E4:0.5 G4:0.5 C5:0.5 G4:0.5 E4:0.5 G4:0.5 F#4 ' +
+    'D4:0.5 F#4:0.5 A4:0.5 C5:0.5 B4 R ' +
+    'G4:0.5 G4:0.5 R:0.5 B4:0.5 D5 C5:0.5 B4:0.5 ' +
+    'A4:0.5 A4:0.5 R:0.5 C5:0.5 E5 D5:0.5 C5:0.5 ' +
+    'B4:0.5 D5:0.5 G5:0.5 D5:0.5 B4:0.5 G4:0.5 A4:0.5 B4:0.5 ' +
+    'G4:1.5 R:0.5 R:2',
+  bass:
+    'G2:0.5 D3:0.5 G2:0.5 D3:0.5 G2:0.5 D3:0.5 G2:0.5 D3:0.5 ' +
+    'D2:0.5 A2:0.5 D2:0.5 A2:0.5 D2:0.5 A2:0.5 D2:0.5 A2:0.5 ' +
+    'C2:0.5 G2:0.5 C2:0.5 G2:0.5 C2:0.5 G2:0.5 C2:0.5 G2:0.5 ' +
+    'D2:0.5 A2:0.5 D2:0.5 A2:0.5 D2:0.5 A2:0.5 D2:0.5 A2:0.5 ' +
+    'G2:0.5 D3:0.5 G2:0.5 D3:0.5 E2:0.5 B2:0.5 E2:0.5 B2:0.5 ' +
+    'A2:0.5 E3:0.5 A2:0.5 E3:0.5 C2:0.5 G2:0.5 C2:0.5 G2:0.5 ' +
+    'G2:0.5 D3:0.5 G2:0.5 D3:0.5 D2:0.5 A2:0.5 D2:0.5 A2:0.5 ' +
+    'G2:0.5 D3:0.5 G2:0.5 D3:0.5 G2 R',
+}
+
 class TraceRouter {
   constructor (stage) {
     this.stage = stage
@@ -51,6 +78,8 @@ class TraceRouter {
     this.state = 'ready'
     this.state_time = 0
     this.geometry = ''
+    this.chip = null
+    this.music = null
     this.reset()
     this.layout()
   }
@@ -123,10 +152,15 @@ class TraceRouter {
     this.layout()
   }
 
+  // Called from a tap or key press, so audio may start.
   start () {
+    this.chip ??= new Chip()
+    this.chip.resume()
     this.reset()
     this.state = 'playing'
     this.state_time = 0
+    this.music?.stop()
+    this.music = this.chip.tune(tune)
   }
 
   // -- Grid helpers ---------------------------------------------------------
@@ -465,6 +499,8 @@ class TraceRouter {
   game_over () {
     this.state = 'over'
     this.state_time = 0
+    this.music?.stop()
+    this.music = null
     this.drag = null
     if (this.score > this.best) {
       this.best = this.score
@@ -483,6 +519,7 @@ class TraceRouter {
   update (dt) {
     this.time += dt
     this.state_time += dt
+    this.music?.update()
     this.shake = Math.max(0, this.shake - dt * 2.4)
     this.flash = Math.max(0, this.flash - dt * 3)
 
@@ -726,7 +763,12 @@ class TraceRouter {
     text(ctx, this.stage.font, value, x, y, style)
   }
 
-  destroy () {}
+  destroy () {
+    this.music?.stop()
+    this.music = null
+    this.chip?.close()
+    this.chip = null
+  }
 }
 
 export default {

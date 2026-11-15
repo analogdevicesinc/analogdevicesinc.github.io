@@ -291,15 +291,18 @@ class Sequencer {
       this.song += 1
     }
 
-    // The bass keeps time whatever you hit.
+    // The bass keeps time whatever you hit. It is the backing track, under
+    // the music mute; the notes you hit are feedback, under the effects one.
     while (this.bass.length && this.bass[0].t <= this.clock + 0.05) {
       const beat = this.bass.shift()
       const delay = Math.max(0, beat.t - this.clock)
-      this.chip?.play(beat.freq, beat.duration, { delay, bass: true })
-      // Hi-hats join in with the streak: on the beat at x2, off it too at x3.
       const multiplier = this.multiplier
-      if (multiplier >= 2) this.chip?.hat(delay)
-      if (multiplier >= 3) this.chip?.hat(delay + beat.duration / 1.6)
+      this.chip?.as_music(() => {
+        this.chip.play(beat.freq, beat.duration, { delay, bass: true })
+        // Hi-hats join in with the streak: on the beat at x2, off it too at x3.
+        if (multiplier >= 2) this.chip.hat(delay)
+        if (multiplier >= 3) this.chip.hat(delay + beat.duration / 1.6)
+      })
       this.ripples.push({ u: 0, z: z_hit, age: -delay, life: 1.4, speed: 6, strength: 0.22 })
     }
 

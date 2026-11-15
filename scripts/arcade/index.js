@@ -7,6 +7,7 @@
 
 import { games } from './games/index.js'
 import { Field, ambient } from './field.js'
+import { sound } from './chip.js'
 
 const el = (tag, props = {}, children = []) => {
   const node = document.createElement(tag)
@@ -34,6 +35,14 @@ const storage = id => ({
     } catch {}
   },
 })
+
+// Music (a note) and effects (a speaker); muted, a slash crosses them out.
+const svg = body => `<svg class="no-background" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`
+const mute_icons = {
+  music: svg('<path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/><path class="slash" d="M4 4l16 16"/>'),
+  effects: svg('<path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="wave" d="M16.5 8.5a5 5 0 0 1 0 7"/><path class="slash" d="M4 4l16 16"/>'),
+}
+const mute_labels = { music: 'music', effects: 'sound effects' }
 
 const close_icon = '<svg class="no-background" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>'
 
@@ -93,6 +102,18 @@ class Arcade {
       return card
     })
 
+    this.$mutes = {}
+    for (const channel of ['music', 'effects']) {
+      const button = el('button', {
+        type: 'button',
+        className: 'adi-arcade-tool adi-arcade-mute',
+        dataset: { action: 'mute', channel },
+      })
+      button.innerHTML = mute_icons[channel]
+      this.$mutes[channel] = button
+    }
+    this.update_mutes()
+
     const menu_button = el('button', {
       type: 'button',
       className: 'adi-arcade-tool',
@@ -124,7 +145,7 @@ class Arcade {
     }, [
       this.$canvas,
       this.$menu,
-      el('div', { className: 'adi-arcade-toolbar' }, [menu_button, close_button]),
+      el('div', { className: 'adi-arcade-toolbar' }, [this.$mutes.music, this.$mutes.effects, menu_button, close_button]),
     ])
 
     this.$root.addEventListener('click', this.on_click)
@@ -221,10 +242,26 @@ class Arcade {
     this.game = undefined
   }
 
+  update_mutes () {
+    for (const [channel, button] of Object.entries(this.$mutes)) {
+      const on = sound[channel]
+      button.dataset.muted = String(!on)
+      button.setAttribute('aria-pressed', String(!on))
+      button.title = `${on ? 'Mute' : 'Unmute'} ${mute_labels[channel]}`
+      button.setAttribute('aria-label', button.title)
+    }
+  }
+
   on_click (event) {
-    const action = event.target.closest('[data-action]')?.dataset.action
+    const target = event.target.closest('[data-action]')
+    const action = target?.dataset.action
     if (action === 'close') return this.close()
     if (action === 'menu') return this.show_menu()
+    if (action === 'mute') {
+      sound.toggle(target.dataset.channel)
+      this.update_mutes()
+      return
+    }
 
     const id = event.target.closest('[data-game]')?.dataset.game
     const game = games.find(entry => entry.id === id && entry.available)
