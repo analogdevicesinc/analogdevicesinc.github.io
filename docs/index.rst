@@ -13,16 +13,17 @@ ADI Open Source
    :category: Documentation
 
 .. section:: Games
+   :class: games
 
    .. container:: event-banner
 
       .. container:: event-banner-title
 
-         ADI Arcade
+         Games
 
       .. container:: event-banner-meta
 
-         Quick break games
+         Quick games in the ADI Arcade
 
 .. cards-collection:: Evaluation boards
    :class: grid eval

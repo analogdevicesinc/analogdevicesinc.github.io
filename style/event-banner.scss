@@ -6,6 +6,17 @@
 // banner: white with the banner color as text on the dark banner, the page
 // background with the banner color as text on the light one.
 
+// The Games section title stays for the toctree, the banner carries it.
+// The padding also keeps the banner's margin inside the section, so #games
+// lands with room above it.
+section.games {
+  padding-top: .5em;
+
+  > h2 {
+    display: none;
+  }
+}
+
 @mixin light-banner {
   --banner-bg1: #f5f8fc;
   --banner-bg2: #eaf1f9;
