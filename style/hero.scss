@@ -141,7 +141,7 @@
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: variable.$screen-0) {
   // Narrow screens put the copy across the full width, so the wash follows.
   .hero-panel::before {
     background:

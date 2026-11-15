@@ -362,6 +362,47 @@ section:has(> .collection-category) {
     }
 }
 
+/* Phones (below the two column breakpoint): instead of one long column,
+ * scroll the grids sideways, repositories two rows tall, collections one row.
+ * Columns are narrower than the scroller and snap to the center, so the
+ * neighbours peek in at the edges to hint that there is more. */
+@media (max-width: variable.$screen-0) {
+    .cards.grid {
+        --card-width: 82%;
+        --edge: 1rem;
+        --ring: .375rem;
+
+        grid-auto-flow: column;
+        grid-template-columns: none;
+        grid-template-rows: auto;
+        grid-auto-columns: var(--card-width);
+        /* Bleed to the viewport edges, over the body padding, so the peeks
+         * reach the screen border; the extra block room keeps the hover
+         * shadow and focus ring from being clipped by the scroller. */
+        margin: calc(-1 * var(--ring)) calc(-1 * var(--edge));
+        padding: var(--ring) var(--edge);
+        scroll-padding-inline: var(--edge);
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-snap-type: x mandatory;
+        overscroll-behavior-x: contain;
+        scrollbar-width: none;
+
+        &::-webkit-scrollbar {
+            display: none;
+        }
+
+        > .entry,
+        > .view-all-card {
+            scroll-snap-align: center;
+        }
+    }
+
+    .cards.grid.repositories {
+        grid-template-rows: auto auto;
+    }
+}
+
 .landing-page .body {
     padding-bottom: 25vh;
 }

@@ -164,7 +164,7 @@ body.dark .event-banner {
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: variable.$screen-0) {
   .event-banner {
     grid-template-columns: 1fr;
   }

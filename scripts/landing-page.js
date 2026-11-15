@@ -38,6 +38,9 @@ class Landing {
               ? filter !== '' && entry.dataset.category !== filter
               : !JSON.parse(entry.dataset.filters).includes(filter)
           })
+          // On phones the grid scrolls sideways: start the new set at its
+          // first card.
+          grid.scrollTo({ left: 0, behavior: 'instant' })
         }, { signal: this.controller.signal })
       })
     })
