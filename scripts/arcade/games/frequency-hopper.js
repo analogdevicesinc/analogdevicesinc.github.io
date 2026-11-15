@@ -2,6 +2,7 @@
 
 import { clamp, hash, ambient } from '../field.js'
 import { text, wrap, hud, hud_bottom } from '../ui.js'
+import { Chip, note } from '../chip.js'
 
 // Frequency Hopper: a carrier crosses a crowded spectrum. Time runs left to
 // right, frequency bottom to top. Each tap hops the carrier up the band, and
@@ -15,6 +16,8 @@ import { text, wrap, hud, hud_bottom } from '../ui.js'
 // - The carrier, its trace and the bands are drawn only by the pixel field.
 // - Difficulty is a function of time survived: bands come faster with
 //   narrower channels, and later some channels hop up and down.
+// - Sound: each hop chirps at the carrier's frequency, higher up the band;
+//   clean passes climb a scale with the streak, and a jam is static.
 
 const TAU = Math.PI * 2
 const rand = (min, max) => min + Math.random() * (max - min)
@@ -30,6 +33,33 @@ const gravity = 2.3
 const hop_velocity = -0.62
 const max_fall = 0.95
 const bottom_margin = 24
+
+// A bouncy little tune hopping up and down the band, in C.
+const tune = {
+  bpm: 150,
+  hats: 1,
+  lead:
+    'C5:0.5 E5:0.5 G5:0.5 E5:0.5 A5:0.5 G5:0.5 E5 ' +
+    'D5:0.5 F5:0.5 A5:0.5 F5:0.5 G5:0.5 F5:0.5 D5 ' +
+    'E5:0.5 G5:0.5 B5:0.5 G5:0.5 C6:0.5 B5:0.5 G5 ' +
+    'A5:0.5 G5:0.5 F5:0.5 E5:0.5 D5 G4 ' +
+    'C5:0.5 C5:0.5 E5 G5:0.5 R:0.5 A5 ' +
+    'F5:0.5 F5:0.5 A5 C6:0.5 R:0.5 A5 ' +
+    'G5:0.5 E5:0.5 C5 D5:0.5 E5:0.5 F5 ' +
+    'E5:0.5 D5:0.5 C5 R:2',
+  bass:
+    'C3:0.5 G3:0.5 C3:0.5 G3:0.5 C3:0.5 G3:0.5 C3:0.5 G3:0.5 ' +
+    'G2:0.5 D3:0.5 G2:0.5 D3:0.5 G2:0.5 D3:0.5 G2:0.5 D3:0.5 ' +
+    'C3:0.5 G3:0.5 C3:0.5 G3:0.5 C3:0.5 G3:0.5 C3:0.5 G3:0.5 ' +
+    'F2:0.5 C3:0.5 F2:0.5 C3:0.5 G2:0.5 D3:0.5 G2:0.5 D3:0.5 ' +
+    'C3:0.5 G3:0.5 C3:0.5 G3:0.5 A2:0.5 E3:0.5 A2:0.5 E3:0.5 ' +
+    'F2:0.5 C3:0.5 F2:0.5 C3:0.5 F2:0.5 C3:0.5 F2:0.5 C3:0.5 ' +
+    'C3:0.5 G3:0.5 C3:0.5 G3:0.5 G2:0.5 D3:0.5 G2:0.5 D3:0.5 ' +
+    'C3:0.5 G3:0.5 C3:0.5 G3:0.5 C3 R',
+}
+
+// Clean passes climb this scale with the streak.
+const streak_notes = ['C5', 'D5', 'E5', 'G5', 'A5', 'C6'].map(note)
 
 const colors = {
   text: '#e9eef5',
@@ -50,6 +80,8 @@ class FrequencyHopper {
     this.state = 'ready'
     this.state_time = 0
     this.trail_at = new Float32Array(0)
+    this.chip = null
+    this.music = null
     this.reset()
   }
 
@@ -86,10 +118,15 @@ class FrequencyHopper {
     this.best_beaten = false
   }
 
+  // Called from a tap or key press, so audio may start.
   start () {
+    this.chip ??= new Chip()
+    this.chip.resume()
     this.reset()
     this.state = 'playing'
     this.state_time = 0
+    this.music?.stop()
+    this.music = this.chip.tune(tune)
   }
 
   // -- Input ----------------------------------------------------------------
@@ -118,6 +155,9 @@ class FrequencyHopper {
 
   hop () {
     this.vy = hop_velocity
+    // A chirp at the carrier's frequency: higher up the band, higher pitch.
+    const freq = 330 * Math.pow(2, (1 - clamp(this.y)) * 1.6)
+    this.chip?.sweep(freq, freq * 1.5, 0.09, { volume: 0.18 })
     this.pulses.push({ x: this.sx, y: this.sy, age: 0, life: 0.35, cool: true })
   }
 
@@ -165,6 +205,9 @@ class FrequencyHopper {
     if (this.state !== 'playing') return false
     this.flash = 1
     this.shake = this.stage.reduced_motion() ? 0 : 0.6
+    // Jammed: a burst of static and the carrier falling away.
+    this.chip?.noise(0.6, { volume: 0.5, filter: 'bandpass', freq: 3000, to: 300, q: 0.7 })
+    this.chip?.sweep(440, 55, 0.55, { wave: 'square', volume: 0.22 })
     this.pulses.push({ x: this.sx, y: this.sy, age: 0, life: 1.2, cool: false })
     this.burst(this.sx, this.sy, colors.noise)
     this.game_over()
@@ -180,12 +223,22 @@ class FrequencyHopper {
     this.streak = clean ? Math.min(max_streak, this.streak + 1) : 0
     const points = 10 * this.tier * (clean ? 2 * this.streak : 1)
     this.score += points
+    if (clean) {
+      const freq = streak_notes[this.streak - 1]
+      this.chip?.play(freq, 0.09, { volume: 0.22 })
+      if (this.streak === max_streak) this.chip?.play(freq * 1.5, 0.12, { delay: 0.07, volume: 0.16 })
+    } else {
+      this.chip?.play(note('C4'), 0.05, { bass: true, volume: 0.4 })
+    }
   }
 
   collect (column, x, y) {
     column.packet.taken = true
     const points = 25 * this.tier
     this.score += points
+    // A coin.
+    this.chip?.play(note('B5'), 0.07, { volume: 0.22, wave: 'square' })
+    this.chip?.play(note('E6'), 0.25, { delay: 0.07, volume: 0.22, wave: 'square' })
     this.pulses.push({ x, y, age: 0, life: 0.6, cool: true })
     this.burst(x, y, colors.cool)
   }
@@ -193,10 +246,13 @@ class FrequencyHopper {
   game_over () {
     this.state = 'over'
     this.state_time = 0
+    this.music?.stop()
+    this.music = null
     if (this.score > this.best) {
       this.best = this.score
       this.best_beaten = true
       this.store.set(best_key, this.best)
+      this.chip?.melody(['C5', 'E5', 'G5', 'C6'].map(note), 0.09, { delay: 0.7, volume: 0.22 })
     }
   }
 
@@ -212,6 +268,7 @@ class FrequencyHopper {
     this.state_time += dt
     this.shake = Math.max(0, this.shake - dt * 2.4)
     this.flash = Math.max(0, this.flash - dt * 3)
+    this.music?.update()
 
     const playing = this.state === 'playing'
     const span = this.span
@@ -480,7 +537,12 @@ class FrequencyHopper {
     text(ctx, this.stage.font, value, x, y, style)
   }
 
-  destroy () {}
+  destroy () {
+    this.music?.stop()
+    this.music = null
+    this.chip?.close()
+    this.chip = null
+  }
 }
 
 export default {

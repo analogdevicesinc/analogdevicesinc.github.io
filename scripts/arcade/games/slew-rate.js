@@ -2,6 +2,7 @@
 
 import { clamp, mix, hash, ambient, difficulty, plane_step } from '../field.js'
 import { text, wrap, hud, hud_bottom } from '../ui.js'
+import { Chip, note } from '../chip.js'
 
 // Slew Rate: a kart race down a curving road, the pixel field laid in
 // perspective. The car drives itself flat out; you steer, dodge the blocks
@@ -17,6 +18,8 @@ import { text, wrap, hud, hud_bottom } from '../ui.js'
 //   Bumping a rival pushes you both aside.
 // - Curves push the car outward. Speed, blocks and cuts follow an
 //   ease-in-out difficulty curve that levels off.
+// - Sound: an 8-bit engine revving with your speed, a whoosh on boosts, a
+//   crunch on crashes, and a countdown beep while you are in the cut zone.
 
 const road = 12
 // Field cells drawn on either side of the rails.
@@ -62,6 +65,30 @@ const slope = d => waves.reduce((sum, [a, l, p]) => sum + a / l * Math.cos(d / l
 const bend = d => waves.reduce((sum, [a, l, p]) => sum - a / (l * l) * Math.sin(d / l + p), 0)
 const bend_max = waves.reduce((sum, [a, l]) => sum + a / (l * l), 0)
 
+// A driving gallop in A minor, faster as the race heats up.
+const tune = {
+  hats: 0.5,
+  hat_volume: 0.08,
+  lead:
+    'A4:0.5 C5:0.5 E5 D5:0.5 C5:0.5 D5 ' +
+    'E5:1.5 G5:0.5 E5 D5 ' +
+    'F5:0.5 E5:0.5 D5 C5:0.5 D5:0.5 E5 ' +
+    'D5:1.5 C5:0.5 B4 R ' +
+    'A4:0.5 C5:0.5 E5 A5:0.5 G5:0.5 E5 ' +
+    'F5:0.5 E5:0.5 F5 G5:1.5 R:0.5 ' +
+    'A5:0.5 G5:0.5 E5 D5:0.5 C5:0.5 D5 ' +
+    'E5:2 R:2',
+  bass:
+    'A2:0.25 A2:0.25 A3:0.5 A2:0.25 A2:0.25 A3:0.5 A2:0.25 A2:0.25 A3:0.5 A2:0.25 A2:0.25 A3:0.5 ' +
+    'A2:0.25 A2:0.25 A3:0.5 A2:0.25 A2:0.25 A3:0.5 G2:0.25 G2:0.25 G3:0.5 G2:0.25 G2:0.25 G3:0.5 ' +
+    'F2:0.25 F2:0.25 F3:0.5 F2:0.25 F2:0.25 F3:0.5 F2:0.25 F2:0.25 F3:0.5 F2:0.25 F2:0.25 F3:0.5 ' +
+    'G2:0.25 G2:0.25 G3:0.5 G2:0.25 G2:0.25 G3:0.5 E2:0.25 E2:0.25 E3:0.5 E2:0.25 E2:0.25 E3:0.5 ' +
+    'A2:0.25 A2:0.25 A3:0.5 A2:0.25 A2:0.25 A3:0.5 A2:0.25 A2:0.25 A3:0.5 A2:0.25 A2:0.25 A3:0.5 ' +
+    'F2:0.25 F2:0.25 F3:0.5 F2:0.25 F2:0.25 F3:0.5 G2:0.25 G2:0.25 G3:0.5 G2:0.25 G2:0.25 G3:0.5 ' +
+    'A2:0.25 A2:0.25 A3:0.5 A2:0.25 A2:0.25 A3:0.5 F2:0.25 F2:0.25 F3:0.5 F2:0.25 F2:0.25 F3:0.5 ' +
+    'E2:0.25 E2:0.25 E3:0.5 E2:0.25 E2:0.25 E3:0.5 E2:0.25 E2:0.25 E3:0.5 E2:0.25 E2:0.25 E3:0.5',
+}
+
 class SlewRate {
   constructor (stage) {
     this.stage = stage
@@ -73,12 +100,16 @@ class SlewRate {
     this.steer_keys = { left: false, right: false }
     this.target = null
     this.next_id = 1
+    this.chip = null
+    this.engine = null
+    this.music = null
     this.reset()
   }
 
   get ramp () { return difficulty(this.elapsed, ramp_seconds) }
   get top () { return mix(6, 10.5, this.ramp) }
   get cut_every () { return mix(12, 9, this.ramp) }
+  get bpm () { return mix(150, 185, this.ramp) }
   get active () { return this.cars.filter(car => !car.out) }
   get rank () { return this.ranked().indexOf(this.player) + 1 }
   // Cars cut next time: never the last one standing.
@@ -107,6 +138,7 @@ class SlewRate {
     // The warning while you are in the cut zone, 0..1, and its pulse.
     this.danger = 0
     this.danger_phase = 0
+    this.beep = Infinity
     this.best_beaten = false
     this.target = null
 
@@ -162,10 +194,18 @@ class SlewRate {
     return this.active.sort((a, b) => b.d - a.d)
   }
 
+  // Called from a tap or key press, so audio may start.
   start () {
+    this.chip ??= new Chip()
+    this.chip.resume()
     this.reset()
     this.state = 'playing'
     this.state_time = 0
+    this.engine?.stop()
+    this.engine = this.chip.voice({ wave: 'pulse', lowpass: 1600, flutter: 0.5, depth: 0.6 })
+    this.chip.melody([note('A4'), note('A5')], 0.1, { volume: 0.2 })
+    this.music?.stop()
+    this.music = this.chip.tune({ ...tune, bpm: this.bpm, delay: 0.3 })
   }
 
   // -- Input ----------------------------------------------------------------
@@ -233,8 +273,10 @@ class SlewRate {
     this.party = Math.max(0, this.party - dt / 3)
     for (const ripple of this.ripples) ripple.age += dt
     this.ripples = this.ripples.filter(ripple => ripple.age < ripple.life)
+    this.music?.update()
 
     if (this.state !== 'playing') return
+    this.music?.set(this.bpm)
 
     this.elapsed += dt
     const step = plane_step(this.layout())
@@ -258,6 +300,15 @@ class SlewRate {
       if (this.cut_timer <= 0) this.cut()
     }
     this.warn(dt)
+    this.rev()
+  }
+
+  // The engine pitch follows your speed: it drops on a crash, climbs back and
+  // screams on a boost.
+  rev () {
+    const speed = this.player.v / this.top
+    const freq = Math.max(28, 62 * Math.pow(speed, 0.8) * (1 + 0.25 * this.ramp))
+    this.engine?.set(freq, 0.16)
   }
 
   // In the cut zone over the last seconds before a cut, the road glows hot:
@@ -271,6 +322,13 @@ class SlewRate {
     const rate = target > this.danger ? 8 : 2.5
     this.danger += (target - this.danger) * Math.min(1, dt * rate)
     this.danger_phase += dt * mix(6, 18, urgency)
+    // A beep each second of the countdown while you are in the zone, higher
+    // for the last one.
+    const second = Math.ceil(this.cut_timer)
+    if (zone && second < this.beep && second >= 1) {
+      this.chip?.play(note(second === 1 ? 'E6' : 'A5'), 0.09, { volume: 0.18 })
+    }
+    this.beep = this.next_race === null ? second : Infinity
   }
 
   drive_player (dt) {
@@ -372,6 +430,8 @@ class SlewRate {
           // A white ring, and a ring of fire right behind it.
           this.ripples.push({ x: car.x, d: car.d, age: 0, life: 0.9, speed: 30, strength: 0.9, light: true })
           this.ripples.push({ x: car.x, d: car.d, age: -0.12, life: 1, speed: 24, strength: 0.7, hot: true })
+          this.chip?.sweep(220, 880, 0.3, { wave: 'square', volume: 0.16 })
+          this.chip?.noise(0.5, { volume: 0.25, filter: 'bandpass', freq: 600, to: 4000, q: 0.8 })
         }
         continue
       }
@@ -388,6 +448,8 @@ class SlewRate {
     if (car.player) {
       this.flash = 1
       this.shake = this.stage.reduced_motion() ? 0 : 0.45
+      this.chip?.noise(0.35, { volume: 0.5, filter: 'lowpass', freq: 2000, to: 150 })
+      this.chip?.sweep(200, 45, 0.3, { wave: 'triangle', volume: 0.5 })
     }
   }
 
@@ -413,6 +475,7 @@ class SlewRate {
         if (a.player || b.player) {
           this.ripples.push({ x: (a.x + b.x) / 2, d: (a.d + b.d) / 2, age: 0, life: 0.6, speed: 18, strength: 0.5, light: true })
           if (!this.stage.reduced_motion()) this.shake = Math.max(this.shake, 0.18)
+          this.chip?.play(140, 0.05, { wave: 'square', volume: 0.2 })
         }
       }
     }
@@ -467,13 +530,20 @@ class SlewRate {
     }
     this.score += 100 * this.race
     this.cars = this.active
+    // The cut cars sputter out.
+    this.chip?.noise(0.5, { volume: 0.2, filter: 'lowpass', freq: 1200, to: 120 })
     if (this.cars.length === 1) {
       // Last one standing: the road throws a party, then a new pack arrives.
       this.score += 500 * this.race
       this.party = 1
       this.next_race = 3
+      this.chip?.melody(['C5', 'E5', 'G5', 'C6', 'G5'].map(note), 0.1, { volume: 0.22 })
+      this.chip?.play(note('C6'), 0.5, { delay: 0.5, volume: 0.22 })
+      this.chip?.melody(['C3', 'G3', 'C4'].map(note), 0.2, { bass: true, length: 0.18 })
       return
     }
+    // Through: a quick all-clear.
+    this.chip?.melody([note('E5'), note('A5')], 0.07, { volume: 0.18 })
     this.assign_slots()
     this.cut_timer = this.cut_every
   }
@@ -489,6 +559,7 @@ class SlewRate {
     }
     this.assign_slots()
     this.cut_timer = this.cut_every + 2
+    this.chip?.melody([note('A4'), note('A5')], 0.1, { volume: 0.2 })
   }
 
   game_over (rank, field) {
@@ -497,10 +568,19 @@ class SlewRate {
     this.final_rank = rank
     this.final_field = field
     this.score = Math.floor(this.score)
+    // Cut: the music and the engine die, and a sad little fall.
+    this.music?.stop()
+    this.music = null
+    this.engine?.stop(0.4)
+    this.engine = null
+    this.chip?.noise(0.5, { volume: 0.45, filter: 'lowpass', freq: 2500, to: 150 })
+    this.chip?.melody(['G4', 'F#4', 'F4'].map(note), 0.18, { delay: 0.2, volume: 0.22 })
+    this.chip?.play(note('E4'), 0.5, { delay: 0.74, volume: 0.22 })
     if (this.score > this.best) {
       this.best = this.score
       this.best_beaten = true
       this.store.set(best_key, this.best)
+      this.chip?.melody(['C5', 'E5', 'G5', 'C6'].map(note), 0.09, { delay: 1.4, volume: 0.22 })
     }
     this.flash = 1
   }
@@ -764,6 +844,15 @@ class SlewRate {
 
   text (ctx, value, x, y, style) {
     text(ctx, this.stage.font, value, x, y, style)
+  }
+
+  destroy () {
+    this.music?.stop()
+    this.music = null
+    this.engine?.stop()
+    this.engine = null
+    this.chip?.close()
+    this.chip = null
   }
 }
 

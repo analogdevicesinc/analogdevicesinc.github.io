@@ -2,6 +2,7 @@
 
 import { clamp, mix, hash, ambient, difficulty, plane_step } from '../field.js'
 import { text, wrap, hud, hud_bottom } from '../ui.js'
+import { Chip, midi_of, freq_of } from '../chip.js'
 
 // Sequencer: notes flow down four lanes of a highway, the pixel field laid
 // in perspective, toward a hit line. Tap a lane as its note crosses the line
@@ -103,87 +104,10 @@ const songs = [
   },
 ]
 
-const semitones = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }
-const midi_of = name => {
-  const [, letter, accidental, octave] = /^([A-G])([#b]?)(\d)$/.exec(name)
-  return semitones[letter] + (accidental === '#' ? 1 : accidental === 'b' ? -1 : 0) + (Number(octave) + 1) * 12
-}
-const freq_of = midi => 440 * Math.pow(2, (midi - 69) / 12)
-
 const lane_keys = {
   d: 0, f: 1, j: 2, k: 3,
   1: 0, 2: 1, 3: 2, 4: 3,
   ArrowLeft: 0, ArrowDown: 1, ArrowUp: 2, ArrowRight: 3,
-}
-
-// A tiny chip: a 25% duty pulse lead, like the NES, and a triangle bass, both
-// with hard, stepped envelopes.
-class Chip {
-  constructor () {
-    const Context = window.AudioContext ?? window.webkitAudioContext
-    if (!Context) return
-    this.ctx = new Context()
-    this.master = this.ctx.createGain()
-    this.master.gain.value = 0.2
-    this.master.connect(this.ctx.destination)
-
-    const harmonics = 32
-    const real = new Float32Array(harmonics)
-    const imag = new Float32Array(harmonics)
-    for (let k = 1; k < harmonics; k++) real[k] = 2 / (k * Math.PI) * Math.sin(k * Math.PI * 0.25)
-    this.pulse = this.ctx.createPeriodicWave(real, imag)
-
-    // A short burst of white noise, for hi-hats.
-    const length = Math.round(this.ctx.sampleRate * 0.05)
-    this.noise = this.ctx.createBuffer(1, length, this.ctx.sampleRate)
-    const data = this.noise.getChannelData(0)
-    for (let i = 0; i < length; i++) data[i] = Math.random() * 2 - 1
-  }
-
-  resume () {
-    if (this.ctx?.state === 'suspended') this.ctx.resume().catch(() => {})
-  }
-
-  play (freq, duration, { delay = 0, bass = false, volume = bass ? 0.55 : 0.32 } = {}) {
-    if (!this.ctx) return
-    const start = this.ctx.currentTime + delay
-    const end = start + duration
-
-    const osc = this.ctx.createOscillator()
-    if (bass) osc.type = 'triangle'
-    else osc.setPeriodicWave(this.pulse)
-    osc.frequency.value = freq
-
-    const gain = this.ctx.createGain()
-    gain.gain.setValueAtTime(volume, start)
-    gain.gain.setValueAtTime(volume * 0.6, start + Math.min(0.05, duration * 0.3))
-    gain.gain.setValueAtTime(volume * 0.6, end - 0.02)
-    gain.gain.linearRampToValueAtTime(0, end)
-
-    osc.connect(gain).connect(this.master)
-    osc.start(start)
-    osc.stop(end + 0.02)
-  }
-
-  hat (delay = 0) {
-    if (!this.ctx) return
-    const start = this.ctx.currentTime + delay
-    const source = this.ctx.createBufferSource()
-    source.buffer = this.noise
-    const filter = this.ctx.createBiquadFilter()
-    filter.type = 'highpass'
-    filter.frequency.value = 7000
-    const gain = this.ctx.createGain()
-    gain.gain.setValueAtTime(0.35, start)
-    gain.gain.exponentialRampToValueAtTime(0.001, start + 0.05)
-    source.connect(filter).connect(gain).connect(this.master)
-    source.start(start)
-    source.stop(start + 0.06)
-  }
-
-  close () {
-    this.ctx?.close().catch(() => {})
-  }
 }
 
 class Sequencer {
