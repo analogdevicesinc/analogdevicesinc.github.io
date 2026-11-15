@@ -469,7 +469,7 @@ class Interference {
     }
 
     if (this.state === 'ready') {
-      add('ADI ARCADE  ·  ELECTRONICA 2026', { size: 12, weight: 700, color: colors.accent, spacing: '3px' }, 0)
+      add('ADI ARCADE', { size: 12, weight: 700, color: colors.accent, spacing: '3px' }, 0)
       add('INTERFERENCE', { size: title, weight: 800, spacing: '2px' }, title + 12)
       paragraph('Cancel the red noise with counter-waves. Let the white data reach the chip.',
         { size: 16, weight: 500, color: colors.muted }, 34)

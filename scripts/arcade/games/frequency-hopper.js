@@ -443,7 +443,7 @@ class FrequencyHopper {
     }
 
     if (this.state === 'ready') {
-      add('ADI ARCADE  ·  ELECTRONICA 2026', { size: 12, weight: 700, color: colors.accent, spacing: '3px' }, 0)
+      add('ADI ARCADE', { size: 12, weight: 700, color: colors.accent, spacing: '3px' }, 0)
       add('FREQUENCY HOPPER', { size: title, weight: 800, spacing: '2px' }, title + 12)
       paragraph('Hop your carrier through the clear channel between congested bands. Tap to hop up, it drifts down on its own.',
         { size: 16, weight: 500, color: colors.muted }, 34)

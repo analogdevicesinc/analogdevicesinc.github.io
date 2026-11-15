@@ -729,7 +729,7 @@ class SlewRate {
     }
 
     if (this.state === 'ready') {
-      add('ADI ARCADE  ·  ELECTRONICA 2026', { size: 12, weight: 700, color: colors.accent, spacing: '3px' }, 0)
+      add('ADI ARCADE', { size: 12, weight: 700, color: colors.accent, spacing: '3px' }, 0)
       add('SLEW RATE', { size: title, weight: 800, spacing: '2px' }, title + 12)
       paragraph('Your car drives flat out: dodge the blocks and grab the white boost pads. Every few seconds the last two cars are cut. Be the last one standing.',
         { size: 16, weight: 500, color: colors.muted }, 34)

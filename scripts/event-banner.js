@@ -2,7 +2,7 @@
 
 import { DOM } from '@shared/scripts/dom.js'
 
-// Adds the Play button to the electronica banner (`.event-banner` in
+// Adds the Play button to the arcade banner (`.event-banner` in
 // docs/index.rst). The games bundle (games.umd.js + games.min.css) is only
 // fetched once Play is clicked.
 

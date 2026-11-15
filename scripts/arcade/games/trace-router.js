@@ -689,7 +689,7 @@ class TraceRouter {
     }
 
     if (this.state === 'ready') {
-      add('ADI ARCADE  ·  ELECTRONICA 2026', { size: 12, weight: 700, color: colors.accent, spacing: '3px' }, 0)
+      add('ADI ARCADE', { size: 12, weight: 700, color: colors.accent, spacing: '3px' }, 0)
       add('TRACE ROUTER', { size: title, weight: 800, spacing: '2px' }, title + 12)
       paragraph('Drag from a pin to its matching partner to route a trace. Traces can\u2019t cross each other.',
         { size: 16, weight: 500, color: colors.muted }, 34)

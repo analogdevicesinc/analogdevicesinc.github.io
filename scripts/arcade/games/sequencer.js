@@ -563,7 +563,7 @@ class Sequencer {
     }
 
     if (this.state === 'ready') {
-      add('ADI ARCADE  ·  ELECTRONICA 2026', { size: 12, weight: 700, color: colors.accent, spacing: '3px' }, 0)
+      add('ADI ARCADE', { size: 12, weight: 700, color: colors.accent, spacing: '3px' }, 0)
       add('SEQUENCER', { size: title, weight: 800, spacing: '2px' }, title + 12)
       paragraph('Tap each note as it crosses the line to play the melody. Miss one and the song misses it too.',
         { size: 16, weight: 500, color: colors.muted }, 34)

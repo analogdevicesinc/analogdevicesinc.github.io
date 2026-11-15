@@ -111,7 +111,7 @@ class Arcade {
     this.$menu = el('div', { className: 'adi-arcade-menu' }, [
       el('div', { className: 'adi-arcade-brand' }, [
         el('h2', { className: 'adi-arcade-title', id: 'adi-arcade-title', textContent: 'ADI Arcade' }),
-        el('p', { className: 'adi-arcade-subtitle', textContent: 'electronica 2026 · Messe München · 10–13 November' }),
+        el('p', { className: 'adi-arcade-subtitle', textContent: 'Quick break games' }),
       ]),
       el('div', { className: 'adi-arcade-games' }, cards),
     ])
