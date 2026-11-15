@@ -5,8 +5,6 @@
 //   create(stage) -> { update(dt), render(ctx), pointer?(type, x, y, event),
 //                      key?(type, event) -> handled, destroy?() }
 
-import interference from './interference.js'
-import trace_router from './trace-router.js'
 import frequency_hopper from './frequency-hopper.js'
 import accumulator from './accumulator.js'
 import sequencer from './sequencer.js'
@@ -14,4 +12,4 @@ import slew_rate from './slew-rate.js'
 import pong from './pong.js'
 import chess from './chess.js'
 
-export const games = [interference, trace_router, frequency_hopper, accumulator, sequencer, slew_rate, pong, chess]
+export const games = [frequency_hopper, accumulator, sequencer, slew_rate, pong, chess]

@@ -73,6 +73,12 @@ class Arcade {
     this.on_pointer = this.on_pointer.bind(this)
     this.on_key = this.on_key.bind(this)
     this.on_fullscreen = this.on_fullscreen.bind(this)
+    this.on_popstate = this.on_popstate.bind(this)
+    // Our entries on the history stack: 1 for the menu, 2 in a game. Back
+    // steps from a game to the menu, and from the menu out of the arcade.
+    this.depth = 0
+    // Pops we caused ourselves (the Games button, Esc), to ignore.
+    this.skip_pops = 0
     this.resize_observer = new ResizeObserver(() => this.resize())
 
     this.build()
@@ -166,6 +172,8 @@ class Arcade {
       document.addEventListener('keyup', this.on_key)
       document.addEventListener('fullscreenchange', this.on_fullscreen)
       document.addEventListener('webkitfullscreenchange', this.on_fullscreen)
+      window.addEventListener('popstate', this.on_popstate)
+      this.push('menu')
       this.resize_observer.observe(this.$root)
       this.resize()
       this.enter_fullscreen()
@@ -174,13 +182,18 @@ class Arcade {
     }
 
     const target = games.find(entry => entry.id === game && entry.available)
-    if (target) this.launch(target)
+    if (target) this.launch(target, { fullscreen: false })
     else this.show_menu()
   }
 
   close () {
     if (!this.$root.isConnected) return
 
+    window.removeEventListener('popstate', this.on_popstate)
+    // Drop our history entries, so Back afterwards leaves the page as usual.
+    if (this.depth > 0) history.go(-this.depth)
+    this.depth = 0
+    this.skip_pops = 0
     this.stop_game()
     cancelAnimationFrame(this.frame)
     document.removeEventListener('keydown', this.on_key)
@@ -218,20 +231,73 @@ class Arcade {
     if (current === this.$root) {
       this.fullscreen = true
     } else if (this.fullscreen) {
-      // Leaving fullscreen (e.g. Esc) closes the arcade in one step.
+      // Leaving fullscreen (Esc, or Back on Android, which only exits
+      // fullscreen) steps back: from a game to the menu, from the menu out.
       this.fullscreen = false
+      this.back()
+    }
+  }
+
+  // -- History ---------------------------------------------------------------
+
+  // The theme (hot_reload.js) handles popstate too: for the same page it
+  // scrolls to state.scrollY, or to the top without one. So every entry we
+  // add, and the one we leave from, carries the scroll position, and the page
+  // stays where it was under the arcade.
+  push (view) {
+    try {
+      const scrollY = window.scrollY
+      if (this.depth === 0) history.replaceState({ ...(history.state ?? {}), scrollY }, '')
+      history.pushState({ adi_arcade: view, scrollY }, '')
+      this.depth += 1
+    } catch {}
+  }
+
+  // Back, by any means (Esc, the Games button, leaving fullscreen): from a
+  // game to the menu, from the menu out of the arcade.
+  back () {
+    if (this.game) this.show_menu()
+    else this.close()
+  }
+
+  on_popstate (event) {
+    if (this.skip_pops > 0) {
+      this.skip_pops -= 1
+      return
+    }
+    const view = event.state?.adi_arcade
+    if (view === 'menu') {
+      this.depth = 1
+      if (this.game) this.show_menu({ from_history: true })
+    } else if (view === 'game') {
+      // Forward into a game we no longer have: stay on the menu.
+      this.depth = 2
+      this.show_menu()
+    } else {
+      this.depth = 0
       this.close()
     }
   }
 
-  show_menu () {
+  show_menu ({ from_history = false } = {}) {
+    if (this.game && !from_history && this.depth > 1) {
+      this.skip_pops += 1
+      this.depth -= 1
+      history.back()
+    }
     this.stop_game()
     this.$root.dataset.view = 'menu'
     this.$menu.querySelector('.adi-arcade-game:not(:disabled)')?.focus({ preventScroll: true })
   }
 
-  launch (game) {
+  launch (game, { fullscreen = true } = {}) {
+    const playing = Boolean(this.game)
     this.stop_game()
+    if (!playing) this.push('game')
+    // Back from fullscreen (Esc) lands on the menu; picking a game from
+    // there (a click, so a user gesture) goes fullscreen again. open()
+    // has just asked already.
+    if (fullscreen && !this.fullscreen) this.enter_fullscreen()
     this.game = game.create(this.stage)
     this.$root.dataset.view = 'game'
     this.$root.querySelector('[data-action="menu"]').focus({ preventScroll: true })
@@ -272,7 +338,7 @@ class Arcade {
     if (!this.game?.pointer) return
     if (event.type === 'pointerdown') {
       event.preventDefault()
-      // Capture keeps drags (Trace Router) tracked outside the canvas; it
+      // Capture keeps drags (Chess) tracked outside the canvas; it
       // throws for pointers the browser no longer considers active.
       try {
         this.$canvas.setPointerCapture(event.pointerId)
@@ -287,7 +353,7 @@ class Arcade {
     if (event.key === 'Escape') {
       if (event.type !== 'keydown') return
       event.preventDefault()
-      this.close()
+      this.back()
       return
     }
     // Keys a game claims (e.g. Space) must not also press the focused
