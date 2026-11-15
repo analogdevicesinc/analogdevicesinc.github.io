@@ -12,5 +12,6 @@ import accumulator from './accumulator.js'
 import sequencer from './sequencer.js'
 import slew_rate from './slew-rate.js'
 import pong from './pong.js'
+import chess from './chess.js'
 
-export const games = [interference, trace_router, frequency_hopper, accumulator, sequencer, slew_rate, pong]
+export const games = [interference, trace_router, frequency_hopper, accumulator, sequencer, slew_rate, pong, chess]
