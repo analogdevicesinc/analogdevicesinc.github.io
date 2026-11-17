@@ -1,12 +1,5 @@
 @use "variable";
 
-/* We could populate the sidebar with other stuff,
- * for now, let's just hide and adjust the margins. */
-
-#left,
-header #logo,
-#right #show-repotoc,
-.vertical-divider,
 .sphinxsidebarwrapper,
 .page-actions {
     display: none !important;
@@ -23,26 +16,10 @@ header #logo,
     }
 }
 
-header #logo {
-    padding-left: 1rem;
-    margin-left: 0;
-}
-
 @media (min-width: variable.$screen-1) and (max-width: variable.$screen-3) {
     .bodywrapper {
         width: calc(65vw + 4.25rem);
         margin-left: 5vw;
-    }
-
-    header #right {
-        width: calc(90vw);
-        margin-left: calc(50vw - 45vw);
-    }
-}
-
-@media (max-width: variable.$screen-1) {
-    header #right {
-        margin-left: 1rem;
     }
 }
 

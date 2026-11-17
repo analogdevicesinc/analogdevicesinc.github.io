@@ -5,6 +5,7 @@ import { DOM } from '@shared/scripts/dom.js'
 
 import { Hero } from './hero.js'
 import { EventBanner } from './event-banner.js'
+import { PortalNavigation } from './portal-navigation.js'
 
 class Landing {
   constructor () {
@@ -51,7 +52,7 @@ class Landing {
 }
 
 const LandingPage = () => {
-  let landing, hero, banner
+  let landing, hero, banner, navigation
   const isLanding = () => ['analogdevicesinc.github.io', 'os-tools'].includes(app.state.repository)
   let active = isLanding()
   const init = () => {
@@ -60,6 +61,7 @@ const LandingPage = () => {
     landing = new Landing()
     hero = new Hero(app)
     banner = new EventBanner()
+    navigation = new PortalNavigation(app)
   }
   window.addEventListener('app:hot_reload:doc_unload', () => {
     active = false
@@ -73,7 +75,8 @@ const LandingPage = () => {
     landing.deinit()
     hero.deinit()
     banner.deinit()
-    landing = hero = banner = undefined
+    navigation.deinit()
+    landing = hero = banner = navigation = undefined
   })
   window.addEventListener('app:hot_reload:page_loaded', () => {
     if (active)
