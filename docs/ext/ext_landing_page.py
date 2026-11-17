@@ -1,9 +1,10 @@
 from docutils.parsers.rst import Directive, directives
 from docutils.parsers.rst.roles import set_classes
 from docutils import nodes
+from urllib.parse import urljoin
 import re
 
-from landing_cards import load_data, repositories_html, collections_html
+from landing_cards import BASE, load_data, repositories_html, collections_html
 
 ARROW = (
     '<svg class="view-all-icon no-background" viewBox="0 0 24 24" width="1.25em" '
@@ -135,7 +136,7 @@ class directive_cards_collection(Directive):
         node_cards += nodes.raw('', cards_html, format='html')
         if 'view-all' in self.options:
             view_all = nodes.reference(
-                '', '', refuri=self.options['view-all'],
+                '', '', refuri=urljoin(BASE, self.options['view-all']),
                 classes=['entry', 'view-all'],
             )
             inner = nodes.inline()

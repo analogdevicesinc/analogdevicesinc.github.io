@@ -52,7 +52,8 @@ class Landing {
 
 const LandingPage = () => {
   let landing, hero, banner
-  let active = app.state.repository === 'analogdevicesinc.github.io'
+  const isLanding = () => ['analogdevicesinc.github.io', 'os-tools'].includes(app.state.repository)
+  let active = isLanding()
   const init = () => {
     if (landing)
       return
@@ -64,8 +65,7 @@ const LandingPage = () => {
     active = false
   })
   window.addEventListener('app:hot_reload:doc_loaded', () => {
-    if (app.state.repository === 'analogdevicesinc.github.io')
-      active = true
+    active = isLanding()
   })
   window.addEventListener('app:hot_reload:page_unload', () => {
     if (!active || !landing)
