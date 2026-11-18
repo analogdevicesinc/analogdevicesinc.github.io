@@ -3,7 +3,7 @@
 $header-height: 3.5rem;
 $link-height: 40px;
 $links-width: 39rem;
-$max-padding: 12.5rem;
+$max-padding: 7rem;
 $gap: .5rem;
 $fade: 1rem;
 $org-margin: 1rem;
@@ -24,12 +24,18 @@ $stagger: 60ms;
     }
 }
 
+@media (min-width: 65em) and (max-width: 105em) {
+    header #right span:last-child {
+        margin-right: -2.5rem;
+    }
+}
+
 .portal-navigation {
     position: sticky;
     margin-top: -3.5rem;
     top: 0;
-    left: calc(#{$org-margin} + 8.75rem + #{$gap});
-    right: 7.25rem;
+    margin-left: calc(#{$org-margin} + 8.75rem + #{$gap});
+    margin-right: 7.25rem;
     z-index: 9;
     display: flex;
     align-items: center;
@@ -39,12 +45,12 @@ $stagger: 60ms;
     padding-block: calc((#{$header-height} - #{$link-height}) / 2);
     overflow-x: auto;
     overflow-y: hidden;
-    scroll-padding-inline: $fade;
+    scroll-padding-inline: $gap;
     scrollbar-width: none;
     mask-image: linear-gradient(to right, transparent, #000 $fade, #000 calc(100% - #{$fade}), transparent);
 
     @media (max-width: variable.$screen-0) {
-        left: calc(#{$org-margin} + 3.35rem + #{$gap});
+        margin-left: calc(#{$org-margin} + 3rem + #{$gap});
     }
 
     @media (min-width: variable.$screen-1) {
@@ -56,7 +62,7 @@ $stagger: 60ms;
     @media (min-width: variable.$screen-3) {
         left: calc(40vw - 10.25rem + #{$gap});
         width: calc(20vw + 25.25rem - #{$gap});
-        padding-left: clamp(0px, calc(20vw + 24.75rem - #{$links-width}), #{$max-padding});
+        padding-left: calc((20vw + 25.25rem - #{$gap} - #{$links-width}) / 2);
     }
 
     @media (min-width: variable.$screen-3) and (max-width: variable.$screen-3) {
