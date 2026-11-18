@@ -25,7 +25,8 @@ $stagger: 60ms;
 }
 
 .portal-navigation {
-    position: fixed;
+    position: sticky;
+    margin-top: -3.5rem;
     top: 0;
     left: calc(#{$org-margin} + 8.75rem + #{$gap});
     right: 7.25rem;
